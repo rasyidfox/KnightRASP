@@ -45,7 +45,7 @@ Full list of the **25 checks** in KnightRASP. Every check produces *evidence* wi
 |---|---|---|---|---|
 | `integrity.signature` | LOW | 0.95 | `expectedSignatureSha256` | Compares the APK signer certificate SHA-256 against the pin. Detects repackaging. |
 | `integrity.installer` | LOW | 0.50 (sideload) / 0.60 (other installer) | `allowedInstallers` | Installation source outside the allow-list (e.g. `com.android.vending`). |
-| `integrity.native_text` | LOW | 0.90 | native | Hashes the native library's executable segment; a change after baseline = runtime patching (inline hooks). |
+| `integrity.native_text` | LOW | 0.90 | native | Compares the executable segment against a **build-time pinned digest** (filled after stripping; detects pre-load patching such as gadget/spawn or a repackaged `.so`) and against a load-time baseline (post-load inline hooks / memory patches). |
 | `integrity.sdk_library_origin` | MEDIUM | 0.85 | native | Verifies the SDK native library is loaded from the app install directory, not `/data/local/tmp` or elsewhere. |
 
 ## EMULATOR

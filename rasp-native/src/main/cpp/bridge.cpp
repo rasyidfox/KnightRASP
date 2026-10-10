@@ -35,6 +35,16 @@
 #define ARCH_ARM 1
 #endif
 
+// Build-time pinned digest slot. Filled by tools/pin_digest.py (CMake POST_BUILD)
+// with the FNV-1a digest of the executable segment. Runtime compares the mapped
+// segment against it, so patching the library bytes before it is ever loaded
+// (Frida gadget/spawn, repackaged .so) is detected even though the runtime
+// baseline would otherwise have been computed from the already-patched code.
+extern "C" {
+__attribute__((used, section(".krpin"), visibility("hidden")))
+volatile uint64_t kr_pin = 0;
+}
+
 // ---------------------------------------------------------------------------
 // Compile-time string obfuscation
 // ---------------------------------------------------------------------------
@@ -308,7 +318,9 @@ int find_region(struct dl_phdr_info* info, size_t /*size*/, void* data) {
             continue;
         }
         segment->address = info->dlpi_addr + phdr.p_vaddr;
-        segment->size = phdr.p_memsz;
+        // p_filesz: bytes that come from the file, so the digest is reproducible
+        // against a build-time file hash (memory beyond filesz is zero-filled).
+        segment->size = phdr.p_filesz;
         return 1;
     }
     return 0;
@@ -331,9 +343,21 @@ uint64_t compute_digest() {
     if (dl_iterate_phdr(find_region, &segment) == 0 || segment.size == 0) {
         return 0;
     }
+
+    // The pinned slot lives inside the range; both the build-time tool and the
+    // runtime hash skip those bytes so patching the pin does not invalidate it.
+    const uintptr_t pin_address = reinterpret_cast<uintptr_t>(&kr_pin);
+    const bool pin_inside = pin_address >= segment.address &&
+                            pin_address - segment.address + sizeof(uint64_t) <= segment.size;
+    const size_t pin_offset =
+        pin_inside ? static_cast<size_t>(pin_address - segment.address) : SIZE_MAX;
+
     const auto* bytes = reinterpret_cast<const unsigned char*>(segment.address);
     uint64_t hash = 14695981039346656037ULL;  // FNV-1a 64 offset basis
     for (size_t i = 0; i < segment.size; ++i) {
+        if (pin_offset != SIZE_MAX && i >= pin_offset && i < pin_offset + sizeof(uint64_t)) {
+            continue;
+        }
         hash ^= bytes[i];
         hash *= 1099511628211ULL;
     }
@@ -348,9 +372,14 @@ bool scan_verdict() {
     }
     if (baseline == 0) {
         baseline = current;
-        return false;
+    } else if (current != baseline) {
+        // The executable segment changed after load: inline hook / memory patch.
+        return true;
     }
-    return current != baseline;
+    const uint64_t pinned = kr_pin;
+    // Pinned at build time: catches patches applied before the first call
+    // (pre-load gadget/spawn, repackaged library).
+    return pinned != 0 && current != pinned;
 }
 
 [[noreturn]] void finish_now() {

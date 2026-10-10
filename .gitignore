@@ -23,3 +23,7 @@ keystore.properties
 .fleet/
 .vscode/
 *.log
+
+# python tooling
+__pycache__/
+*.pyc

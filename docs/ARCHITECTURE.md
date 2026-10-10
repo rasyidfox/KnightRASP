@@ -528,9 +528,11 @@ false-positive characteristics:
 5. **Binary hardening.** Full RELRO + immediate binding, non-executable stack,
    hidden visibility, `--exclude-libs,ALL`, debug symbols stripped in release, raw
    syscalls for integrity-critical reads on arm64.
-6. **SDK anti-tamper checks.** `integrity.native_text` (executable-segment baseline)
-   and `integrity.sdk_library_origin` (the native library must load from the app's
-   install directory, not `/data/local/tmp`).
+6. **SDK anti-tamper checks.** `integrity.native_text` (build-time pinned digest of
+   the executable segment, plus a load-time baseline) and `integrity.sdk_library_origin`
+   (the native library must load from the app's install directory, not `/data/local/tmp`).
+   Pinning is done after stripping, so packaging-time stripping stays a no-op and the
+   pinned bytes remain valid in the APK.
 7. **Consumer ProGuard rules** ship inside the AAR so consumers need no extra
    configuration and only the public API (plus the JNI boundary) is kept.
 8. **No secrets.** No API keys or secret algorithms inside the SDK; assume attackers
