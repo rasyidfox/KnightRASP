@@ -29,4 +29,26 @@ class NativeHookCheckTest {
         val result = NativeHookCheck(probes.native).run(testContext(probes))
         assertEquals(CheckResult.Detected::class.java, result.javaClass)
     }
+
+    @Test
+    fun injected_memory_unknown_without_native() {
+        val probes = TestProbes(native = null)
+        assertTrue(InjectedMemoryCheck(probes.native).run(testContext(probes)) is CheckResult.Unknown)
+    }
+
+    @Test
+    fun injected_memory_clean_by_default() {
+        val probes = TestProbes()
+        assertEquals(CheckResult.Clean, InjectedMemoryCheck(probes.native).run(testContext(probes)))
+    }
+
+    @Test
+    fun injected_memory_detected_when_shape_matches() {
+        val native = TestNativeProbe().apply { injectedMemory = true }
+        val probes = TestProbes(native = native)
+        assertEquals(
+            CheckResult.Detected::class.java,
+            InjectedMemoryCheck(probes.native).run(testContext(probes)).javaClass,
+        )
+    }
 }

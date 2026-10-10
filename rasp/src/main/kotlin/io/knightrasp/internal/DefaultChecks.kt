@@ -4,6 +4,7 @@ import io.knightrasp.check.RaspCheck
 import io.knightrasp.check.debug.DebuggerFlagCheck
 import io.knightrasp.check.debug.NativeDebuggerCheck
 import io.knightrasp.check.debug.TracerPidCheck
+import io.knightrasp.check.emulator.EmulatorCpuInfoCheck
 import io.knightrasp.check.emulator.EmulatorFilesCheck
 import io.knightrasp.check.emulator.EmulatorPropsCheck
 import io.knightrasp.check.environment.AdbEnabledCheck
@@ -12,12 +13,15 @@ import io.knightrasp.check.environment.DeveloperOptionsCheck
 import io.knightrasp.check.environment.MockLocationCheck
 import io.knightrasp.check.hook.FridaMapsCheck
 import io.knightrasp.check.hook.FridaThreadsCheck
+import io.knightrasp.check.hook.InjectedMemoryCheck
 import io.knightrasp.check.hook.NativeHookCheck
 import io.knightrasp.check.integrity.InstallerCheck
 import io.knightrasp.check.integrity.NativeTextIntegrityCheck
 import io.knightrasp.check.integrity.SdkLibraryOriginCheck
 import io.knightrasp.check.integrity.SignatureCheck
+import io.knightrasp.check.root.BootloaderStateCheck
 import io.knightrasp.check.root.MagiskArtifactsCheck
+import io.knightrasp.check.root.RootMountCheck
 import io.knightrasp.check.root.SuBinaryCheck
 import io.knightrasp.check.root.TestKeysCheck
 import io.knightrasp.check.virtualization.ClonerPackagesCheck
@@ -32,6 +36,8 @@ object DefaultChecks {
         SuBinaryCheck(probes.file),
         MagiskArtifactsCheck(probes.file, probes.packages),
         TestKeysCheck(probes.system),
+        RootMountCheck(probes.native),
+        BootloaderStateCheck(probes.native),
         // Debug
         DebuggerFlagCheck(probes.system),
         TracerPidCheck(probes.proc),
@@ -39,6 +45,7 @@ object DefaultChecks {
         // Emulator
         EmulatorPropsCheck(probes.system),
         EmulatorFilesCheck(probes.file),
+        EmulatorCpuInfoCheck(probes.file),
         // Environment
         DeveloperOptionsCheck(probes.settings),
         AdbEnabledCheck(probes.settings),
@@ -48,6 +55,7 @@ object DefaultChecks {
         FridaThreadsCheck(probes.proc),
         FridaMapsCheck(probes.proc),
         NativeHookCheck(probes.native),
+        InjectedMemoryCheck(probes.native),
         // Integrity
         SignatureCheck(probes.packages),
         InstallerCheck(probes.packages),

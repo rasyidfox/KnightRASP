@@ -29,6 +29,12 @@ class JniBridge private constructor() : NativeProbe {
 
     override fun signalC(): Boolean = n3()
 
+    override fun signalD(): Boolean = n5()
+
+    override fun signalE(): Boolean = n6()
+
+    override fun signalF(): Boolean = n7()
+
     override fun shutdown() {
         n4()
     }
@@ -40,6 +46,12 @@ class JniBridge private constructor() : NativeProbe {
     private external fun n3(): Boolean
 
     private external fun n4()
+
+    private external fun n5(): Boolean
+
+    private external fun n6(): Boolean
+
+    private external fun n7(): Boolean
 
     companion object {
         private fun decodedLibraryName(): String =

@@ -93,19 +93,28 @@ class TestSystemProbe : SystemProbe {
     override fun enabledAccessibilityServiceIds(): List<String> = accessibilityServices
 }
 
-/** Fake [NativeProbe]; everything defaults to negative (clean device). */
+/** Fake [NativeProbe]; every signal defaults to negative (clean device). */
 class TestNativeProbe : NativeProbe {
     override var moduleName: String = "libguardcore.so"
     var debuggerDetected = false
     var textModified = false
     var hooked = false
+    var mountsDetected = false
+    var bootStateModified = false
+    var injectedMemory = false
     var killCalled = false
 
     override fun signalA(): Boolean = debuggerDetected
 
+    override fun signalB(): Boolean = hooked
+
     override fun signalC(): Boolean = textModified
 
-    override fun signalB(): Boolean = hooked
+    override fun signalD(): Boolean = mountsDetected
+
+    override fun signalE(): Boolean = bootStateModified
+
+    override fun signalF(): Boolean = injectedMemory
 
     override fun shutdown() {
         killCalled = true

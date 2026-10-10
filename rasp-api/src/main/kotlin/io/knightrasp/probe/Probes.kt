@@ -99,6 +99,15 @@ interface NativeProbe {
     /** true = hook artifacts (frida/xposed/substrate) seen when reading /proc/self/maps. */
     fun signalB(): Boolean
 
+    /** true = root-framework artifacts are visible in the process mount namespace. */
+    fun signalD(): Boolean
+
+    /** true = verified-boot / bootloader state indicates a modified device. */
+    fun signalE(): Boolean
+
+    /** true = memory-map shapes typical of injected agents (memfd / writable+exec mappings). */
+    fun signalF(): Boolean
+
     /** Kills the process via a raw syscall, bypassing Java/libc wrappers. */
     fun shutdown()
 }

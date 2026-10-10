@@ -1,6 +1,6 @@
 # Check Catalog
 
-Full list of the **21 checks** in KnightRASP. Every check produces *evidence* with a
+Full list of the **25 checks** in KnightRASP. Every check produces *evidence* with a
 `confidence` in 0..1; the final score is computed by the engine (noisy-OR per category
 + a small cross-category bonus) — see
 [README](../README.md#policy-responses-and-silent-mode).
@@ -19,6 +19,8 @@ Full list of the **21 checks** in KnightRASP. Every check produces *evidence* wi
 | `root.su_binary` | LOW | 0.60 | – | `su` binary in common paths (`/system/bin/su`, `/system/xbin/su`, `/data/adb/...`, etc). Catches modern Magisk symlinks (`su -> magisk`). |
 | `root.magisk_artifacts` | LOW | 0.70 (path) / 0.50 (package) | – | Magisk/KernelSU directories (`/data/adb/magisk`, `/sbin/.magisk`, etc) and root manager packages (Magisk, KernelSU, LSPosed, SuperSU). |
 | `root.test_keys` | LOW | 0.40 | – | `Build.TAGS` contains `test-keys` (image not signed with release keys). |
+| `root.native_mounts` | LOW | 0.50 | native | Root-framework artifacts in the process mount namespace (`magisk`, `kernelsu`, `ksud`), read with a raw syscall. Complements `root.su_binary` when Magisk's deny-list hides binaries and `/data/adb`. |
+| `root.bootloader_state` | LOW | 0.50 | native | Verified-boot state (`ro.boot.verifiedbootstate` orange/yellow, `ro.boot.flash.locked=0`, vbmeta unlocked). Comes from the bootloader and cannot be hidden by Magisk. |
 
 ## DEBUG
 
@@ -35,6 +37,7 @@ Full list of the **21 checks** in KnightRASP. Every check produces *evidence* wi
 | `hook.frida_threads` | LOW | 0.80 | – | Typical Frida thread names: `gmain`, `gdbus`, `gum-js-loop`, `pool-frida`. |
 | `hook.maps_artifacts` | MEDIUM | 0.85 | – | Frida/Xposed/Substrate/LSPosed artifacts in the process memory map (`/proc/self/maps`). |
 | `hook.native_maps` | LOW | 0.85 | native | Memory-map scan from C++ via raw syscall (harder to hook). |
+| `hook.injected_memory` | LOW | 0.60 | native | Memory-map shapes typical of injected agents: non-ART `memfd:` mappings and writable+executable `.so` mappings — survives renaming of `frida-server`/gadget. |
 
 ## INTEGRITY
 
@@ -51,6 +54,7 @@ Full list of the **21 checks** in KnightRASP. Every check produces *evidence* wi
 |---|---|---|---|---|
 | `emulator.props` | LOW | 0.20–0.60 per signal | – | Emulator-typical fingerprint/model/hardware/product/ABI (goldfish, ranchu, sdk_gphone, vbox, etc). |
 | `emulator.files` | LOW | 0.50 | – | QEMU/Genymotion device files (`/dev/qemu_pipe`, `/dev/socket/genyd`, etc). |
+| `emulator.cpuinfo` | LOW | 0.60 | – | Emulator markers in `/proc/cpuinfo` (`goldfish`, `ranchu`, `qemu`). Independent of `Build.*`, so spoofed vendor fingerprints do not hide it. |
 
 ## ENVIRONMENT
 

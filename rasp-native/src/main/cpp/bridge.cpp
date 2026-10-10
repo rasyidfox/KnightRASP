@@ -16,9 +16,11 @@
 #include <fcntl.h>
 #include <link.h>
 #include <sys/syscall.h>
+#include <sys/system_properties.h>
 #include <unistd.h>
 
 #include <array>
+#include <cerrno>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -156,11 +158,13 @@ bool scan_status() {
 
 bool scan_trace() {
 #if defined(SYS_ptrace)
-    // PTRACE_TRACEME = 0. Call it only once: the second call always returns EPERM.
-    static const bool detected = [] {
-        return sys6(SYS_ptrace, 0, 0, 0, 0, 0, 0) < 0;
+    // PTRACE_TRACEME = 0. Called once: a second call in the same process always
+    // returns -EPERM. Only -EPERM means "already traced". SELinux may deny an
+    // untrusted app with -EACCES, which must NOT be treated as evidence.
+    static const long result = [] {
+        return sys6(SYS_ptrace, 0, 0, 0, 0, 0, 0);
     }();
-    return detected;
+    return result == -EPERM;
 #else
     return false;
 #endif
@@ -182,6 +186,104 @@ bool scan_regions() {
         if (has_token(maps, marker.c_str())) {
             return true;
         }
+    }
+    return false;
+}
+
+bool scan_root_mounts() {
+    std::string data;
+    if (!slurp(ENC("/proc/self/mountinfo").c_str(), data, 4 * 1024 * 1024)) {
+        return false;
+    }
+    static const std::array<std::string, 3> kTokens = {
+        ENC("magisk"),
+        ENC("kernelsu"),
+        ENC("ksud"),
+    };
+    for (const auto& token : kTokens) {
+        if (has_token(data, token.c_str())) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool boot_state_modified() {
+    char value[PROP_VALUE_MAX] = {0};
+    auto prop = [&value](const std::string& key) -> std::string {
+        value[0] = '\0';
+        __system_property_get(key.c_str(), value);
+        return std::string(value);
+    };
+    const std::string state = prop(ENC("ro.boot.verifiedbootstate"));
+    if (state == ENC("orange") || state == ENC("yellow")) {
+        return true;
+    }
+    if (prop(ENC("ro.boot.flash.locked")) == ENC("0")) {
+        return true;
+    }
+    if (prop(ENC("ro.boot.vbmeta.device_state")) == ENC("unlocked")) {
+        return true;
+    }
+    return false;
+}
+
+// Memory-map shapes typical of injected agents. File-name-based markers can be
+// defeated by renaming; memfd-backed or writable+executable file mappings are
+// harder to hide (ART's "jit-cache" memfd is excluded).
+bool suspicious_memory() {
+    std::string data;
+    if (!slurp(ENC("/proc/self/maps").c_str(), data, 8 * 1024 * 1024)) {
+        return false;
+    }
+
+    const std::string memfd = ENC("memfd:");
+    // ART creates memfd mappings of its own (jit caches, profiles, vdex/odex);
+    // names containing these tokens are considered benign.
+    static const std::array<std::string, 5> kBenign = {
+        ENC("jit"),
+        ENC("profile"),
+        ENC("odex"),
+        ENC("vdex"),
+        ENC("dex"),
+    };
+    size_t pos = 0;
+    while ((pos = data.find(memfd, pos)) != std::string::npos) {
+        const size_t end = data.find('\n', pos);
+        const size_t stop = (end == std::string::npos) ? data.size() : end;
+        const size_t name_start = pos + memfd.size();
+        size_t name_end = data.find_first_of(" \t(", name_start);
+        if (name_end == std::string::npos || name_end > stop) {
+            name_end = stop;
+        }
+        const std::string name = data.substr(name_start, name_end - name_start);
+
+        bool benign = false;
+        for (const auto& token : kBenign) {
+            if (name.find(token) != std::string::npos) {
+                benign = true;
+                break;
+            }
+        }
+        if (!benign) {
+            return true;
+        }
+        pos = stop;
+    }
+
+    const std::string rwxp = ENC("rwxp");
+    const std::string so_suffix = ENC(".so");
+    pos = 0;
+    while ((pos = data.find(rwxp, pos)) != std::string::npos) {
+        const size_t end = data.find('\n', pos);
+        const size_t stop = (end == std::string::npos) ? data.size() : end;
+        const size_t start_raw = data.rfind('\n', pos);
+        const size_t start = (start_raw == std::string::npos) ? 0 : start_raw + 1;
+        const size_t lib = data.find(so_suffix, start);
+        if (lib != std::string::npos && lib < stop) {
+            return true;
+        }
+        pos = stop;
     }
     return false;
 }
@@ -275,6 +377,18 @@ void call_d(JNIEnv* /*env*/, jobject /*thiz*/) {
     finish_now();
 }
 
+jboolean call_e(JNIEnv* /*env*/, jobject /*thiz*/) {
+    return scan_root_mounts() ? JNI_TRUE : JNI_FALSE;
+}
+
+jboolean call_f(JNIEnv* /*env*/, jobject /*thiz*/) {
+    return boot_state_modified() ? JNI_TRUE : JNI_FALSE;
+}
+
+jboolean call_g(JNIEnv* /*env*/, jobject /*thiz*/) {
+    return suspicious_memory() ? JNI_TRUE : JNI_FALSE;
+}
+
 const JNINativeMethod kMethods[] = {
     {const_cast<char*>("n1"), const_cast<char*>("()Z"),
      reinterpret_cast<void*>(&call_a)},
@@ -284,6 +398,12 @@ const JNINativeMethod kMethods[] = {
      reinterpret_cast<void*>(&call_c)},
     {const_cast<char*>("n4"), const_cast<char*>("()V"),
      reinterpret_cast<void*>(&call_d)},
+    {const_cast<char*>("n5"), const_cast<char*>("()Z"),
+     reinterpret_cast<void*>(&call_e)},
+    {const_cast<char*>("n6"), const_cast<char*>("()Z"),
+     reinterpret_cast<void*>(&call_f)},
+    {const_cast<char*>("n7"), const_cast<char*>("()Z"),
+     reinterpret_cast<void*>(&call_g)},
 };
 
 }  // namespace

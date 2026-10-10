@@ -89,11 +89,15 @@ class PipelineDemoTest {
             hooked = true
             textModified = true
             debuggerDetected = true
+            mountsDetected = true
+            bootStateModified = true
+            injectedMemory = true
         }
         return TestProbes(native = native).apply {
             file.add("/system/xbin/su")
             file.add("/data/adb/magisk")
             file.add("/data/adb/modules")
+            file.add("/proc/cpuinfo", "Hardware\t: ranchu\n")
             packages.installed += "com.topjohnwu.magisk"
             packages.installed += "com.lbe.parallel"
             packages.signingCerts[packageName] = listOf("deadbeef")

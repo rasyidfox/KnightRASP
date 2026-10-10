@@ -402,7 +402,7 @@ interface Probes {
     val packages: PackageProbe   // isInstalled, signingCertSha256, installerPackageName, apkPath
     val settings: SettingsProbe  // globalInt(key, default), secureInt(key, default)
     val system: SystemProbe      // Build properties, isDebuggerConnected, accessibility services
-    val native: NativeProbe?     // moduleName, signalA, signalB, signalC, shutdown
+    val native: NativeProbe?     // moduleName, signalA..signalF, shutdown
 }
 ```
 
