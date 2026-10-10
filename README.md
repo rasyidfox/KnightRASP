@@ -5,7 +5,7 @@ SDK that detects runtime threats (root, hooking, debuggers, tampering, emulators
 virtualization) and reacts according to your policy, including **silent kill with no
 logs and no dialogs**.
 
-- 26 checks across 7 categories, evidence-based with confidence scores (not booleans)
+- 28 checks across 7 categories, evidence-based with confidence scores (not booleans)
 - Native anti-debug / anti-hook / integrity via C++ and raw syscalls (JNI)
 - Telemetry queue, signed remote rules, Play Integrity — all optional
 - Latest review: 114 unit tests passing, tested on a real device (Android 13)
@@ -377,14 +377,14 @@ ScreenGuard.enableSecure(activity)
 
 ## Check catalog
 
-26 checks, 7 categories — the full list with confidence, cost, and required
+28 checks, 7 categories — the full list with confidence, cost, and required
 configuration is in [docs/CHECKS.md](docs/CHECKS.md). Summary:
 
 | Category | Checks |
 |---|---|
 | ROOT | `root.su_binary`, `root.magisk_artifacts`, `root.test_keys`, `root.native_mounts`, `root.bootloader_state` |
 | DEBUG | `debug.debugger_connected`, `debug.tracer_pid`, `debug.native_ptrace` |
-| HOOK | `hook.frida_threads`, `hook.maps_artifacts`, `hook.native_maps`, `hook.injected_memory` |
+| HOOK | `hook.frida_threads`, `hook.maps_artifacts`, `hook.native_maps`, `hook.injected_memory`, `hook.system_libraries`, `hook.plt_integrity` |
 | INTEGRITY | `integrity.signature`, `integrity.installer`, `integrity.native_text`, `integrity.sdk_library_origin`, `integrity.key_attestation` |
 | EMULATOR | `emulator.props`, `emulator.files`, `emulator.cpuinfo` |
 | ENVIRONMENT | `env.developer_options`, `env.adb_enabled`, `env.mock_location`, `env.accessibility_services` |

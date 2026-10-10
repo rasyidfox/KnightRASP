@@ -562,6 +562,14 @@ false-positive characteristics:
     certificate chain generated in AndroidKeyStore. Client-side it is one more
     signal; the backend verifies the chain against Google's roots, which — unlike
     `ro.boot.*` properties — cannot be spoofed with `resetprop`.
+15. **System-library and PLT integrity.** `hook.system_libraries` compares the
+    executable segments of `libart`/`libc`/`libandroid_runtime` with the on-disk
+    files (verified boot keeps those pristine), catching ART-level hook frameworks
+    without relying on library names; `hook.plt_integrity` verifies watched PLT/GOT
+    entries against `dlsym`, catching PLT hooks (e.g. faked boot state). Both run in
+    the watchdog as well. `hook.maps_artifacts` markers were extended to the common
+    ART hook frameworks (`liblspd`, `libriru`, `sandhook`, `libepic`, `libdobby`,
+    `shadowhook`, ...).
 
 ---
 

@@ -1,6 +1,6 @@
 # Check Catalog
 
-Full list of the **26 checks** in KnightRASP. Every check produces *evidence* with a
+Full list of the **28 checks** in KnightRASP. Every check produces *evidence* with a
 `confidence` in 0..1; the final score is computed by the engine (noisy-OR per category
 + a small cross-category bonus) — see
 [README](../README.md#policy-responses-and-silent-mode).
@@ -35,9 +35,11 @@ Full list of the **26 checks** in KnightRASP. Every check produces *evidence* wi
 | ID | Cost | Confidence | Needs | Description |
 |---|---|---|---|---|
 | `hook.frida_threads` | LOW | 0.80 | – | Typical Frida thread names: `gmain`, `gdbus`, `gum-js-loop`, `pool-frida`. |
-| `hook.maps_artifacts` | MEDIUM | 0.85 | – | Frida/Xposed/Substrate/LSPosed artifacts in the process memory map (`/proc/self/maps`). |
+| `hook.maps_artifacts` | MEDIUM | 0.85 | – | Hook-framework artifacts in the process memory map: Frida, Xposed/LSPosed (`liblspd`, `libriru`, `zygisk`), ART hook frameworks (`sandhook`, `libepic`, `libdobby`, `shadowhook`, `libwhale`, `yahfa`, `libpine`) and Substrate. |
 | `hook.native_maps` | LOW | 0.85 | native | Memory-map scan from C++ via raw syscall (harder to hook). |
 | `hook.injected_memory` | LOW | 0.60 | native | Memory-map shapes typical of injected agents: non-ART `memfd:` mappings and writable+executable `.so` mappings — survives renaming of `frida-server`/gadget. |
+| `hook.system_libraries` | MEDIUM | 0.70 | native | Compares the executable segments of `libart.so`/`libc.so`/`libandroid_runtime.so` against the files on disk (rotating 1 MB window per tick). Catches ART-level hook frameworks (LSPosed, SandHook, Epic, ...) regardless of library names. |
+| `hook.plt_integrity` | LOW | 0.60 | native | Compares watched PLT/GOT entries of the SDK's own library (`__system_property_get`, `dlsym`, ...) with the addresses `dlsym` resolves; catches PLT hooks such as faking the boot state. |
 
 ## INTEGRITY
 

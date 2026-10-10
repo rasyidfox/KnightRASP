@@ -124,6 +124,12 @@ interface NativeProbe {
     /** true = memory-map shapes typical of injected agents (memfd / writable+exec mappings). */
     fun signalF(): Boolean
 
+    /** true = a watched system library's executable segment differs from the on-disk file. */
+    fun signalG(): Boolean
+
+    /** true = a watched PLT/GOT entry in our own library was redirected after load. */
+    fun signalH(): Boolean
+
     /**
      * Enables and configures the native watchdog: a native thread that keeps
      * re-evaluating the native checks independently of the Kotlin engine and can

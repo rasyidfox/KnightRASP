@@ -102,6 +102,8 @@ class TestNativeProbe : NativeProbe {
     var mountsDetected = false
     var bootStateModified = false
     var injectedMemory = false
+    var systemLibrariesModified = false
+    var pltHookDetected = false
     var killCalled = false
 
     override fun signalA(): Boolean = debuggerDetected
@@ -115,6 +117,10 @@ class TestNativeProbe : NativeProbe {
     override fun signalE(): Boolean = bootStateModified
 
     override fun signalF(): Boolean = injectedMemory
+
+    override fun signalG(): Boolean = systemLibrariesModified
+
+    override fun signalH(): Boolean = pltHookDetected
 
     override fun watchdog(enabled: Boolean, killOnEvidence: Boolean, intervalMs: Int) {
         watchdogEnabled = enabled

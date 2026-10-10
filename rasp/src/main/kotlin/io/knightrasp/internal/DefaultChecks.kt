@@ -15,6 +15,8 @@ import io.knightrasp.check.hook.FridaMapsCheck
 import io.knightrasp.check.hook.FridaThreadsCheck
 import io.knightrasp.check.hook.InjectedMemoryCheck
 import io.knightrasp.check.hook.NativeHookCheck
+import io.knightrasp.check.hook.PltIntegrityCheck
+import io.knightrasp.check.hook.SystemLibraryIntegrityCheck
 import io.knightrasp.check.integrity.InstallerCheck
 import io.knightrasp.check.integrity.KeyAttestationCheck
 import io.knightrasp.check.integrity.NativeTextIntegrityCheck
@@ -57,6 +59,8 @@ object DefaultChecks {
         FridaMapsCheck(probes.proc),
         NativeHookCheck(probes.native),
         InjectedMemoryCheck(probes.native),
+        SystemLibraryIntegrityCheck(probes.native),
+        PltIntegrityCheck(probes.native),
         // Integrity
         SignatureCheck(probes.packages),
         InstallerCheck(probes.packages),

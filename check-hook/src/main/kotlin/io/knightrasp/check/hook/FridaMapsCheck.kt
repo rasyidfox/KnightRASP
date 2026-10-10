@@ -39,9 +39,11 @@ class FridaMapsCheck(private val proc: ProcProbe) : RaspCheck {
     companion object {
         const val CONFIDENCE = 0.85f
 
-        /** Obfuscated hooking-framework markers. */
+        /** Obfuscated hooking-framework markers (Frida, Xposed/LSPosed, ART hook frameworks). */
         val MARKERS: List<String> = TextCodec.decodeList(
-            "796d767b7e15676f706c7a7b156c6a7d6c6b6d7e6b7a15736c6f706c7a7b1573767d786a72",
+            "796d767b7e15676f706c7a7b156c6a7d6c6b6d7e6b7a15736c6f706c7a7b1573767d786a721573767d736c6f" +
+                "7b1573767d6d766d6a15656678766c74156c7e717b777070741573767d7a6f767c1573767d7b707d7d6615" +
+                "6c777e7b7068777070741573767d68777e737a15667e77797e1573767d6f76717a",
             0x1F,
         )
     }

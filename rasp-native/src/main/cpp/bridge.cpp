@@ -13,6 +13,7 @@
 #include <jni.h>
 
 #include <dlfcn.h>
+#include <elf.h>
 #include <fcntl.h>
 #include <link.h>
 #include <pthread.h>
@@ -24,9 +25,11 @@
 #include <atomic>
 #include <cerrno>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <mutex>
 #include <string>
 
 #if defined(__aarch64__)
@@ -129,15 +132,15 @@ bool slurp(const char* path, std::string& out, size_t max_bytes) {
     return ok;
 }
 
-bool has_token(const std::string& haystack, const char* needle) {
+bool has_token(const char* data, size_t length, const char* needle) {
     const size_t needle_len = std::strlen(needle);
-    if (needle_len == 0 || haystack.size() < needle_len) {
+    if (needle_len == 0 || length < needle_len) {
         return false;
     }
-    for (size_t i = 0; i + needle_len <= haystack.size(); ++i) {
+    for (size_t i = 0; i + needle_len <= length; ++i) {
         size_t j = 0;
         for (; j < needle_len; ++j) {
-            char a = haystack[i + j];
+            char a = data[i + j];
             char b = needle[j];
             if (a >= 'A' && a <= 'Z') {
                 a = static_cast<char>(a - 'A' + 'a');
@@ -154,6 +157,10 @@ bool has_token(const std::string& haystack, const char* needle) {
         }
     }
     return false;
+}
+
+bool has_token(const std::string& haystack, const char* needle) {
+    return has_token(haystack.data(), haystack.size(), needle);
 }
 
 bool scan_status() {
@@ -183,17 +190,355 @@ bool scan_trace() {
 #endif
 }
 
+// Forward declaration: defined further below with the ELF helpers.
+uintptr_t module_base();
+
+bool parse_hex(const char* begin, const char* end, uint64_t& out) {
+    out = 0;
+    if (begin >= end) {
+        return false;
+    }
+    for (const char* p = begin; p < end; ++p) {
+        const char c = *p;
+        int value;
+        if (c >= '0' && c <= '9') {
+            value = c - '0';
+        } else if (c >= 'a' && c <= 'f') {
+            value = c - 'a' + 10;
+        } else if (c >= 'A' && c <= 'F') {
+            value = c - 'A' + 10;
+        } else {
+            return false;
+        }
+        out = (out << 4) | static_cast<uint64_t>(value);
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// System-library integrity (mapped memory vs on-disk file)
+//
+// Frameworks such as LSPosed, SandHook or Epic hook functions inside libart /
+// libc, which never touches our own library. Comparing the executable segments
+// of those system libraries against the files on disk (kept pristine by
+// verified boot) catches the patch without relying on any library name.
+//
+// Cost is bounded: each call compares a rotating 1 MB window per segment, so a
+// large library is fully covered over a few ticks.
+// ---------------------------------------------------------------------------
+
+std::mutex g_lib_mutex;
+size_t g_lib_rotation = 0;
+unsigned char g_lib_buffer[1024 * 1024];
+
+long read_file_range(const char* path, uint64_t offset, unsigned char* buffer, size_t size) {
+#if defined(SYS_openat)
+    long fd = sys6(SYS_openat, AT_FDCWD, reinterpret_cast<long>(path), O_RDONLY | O_CLOEXEC, 0, 0, 0);
+#else
+    long fd = sys6(SYS_open, reinterpret_cast<long>(path), O_RDONLY | O_CLOEXEC, 0, 0, 0);
+#endif
+    if (fd < 0) {
+        return -1;
+    }
+    long total = 0;
+    if (sys6(SYS_lseek, fd, static_cast<long>(offset), SEEK_SET, 0, 0, 0) >= 0) {
+        while (static_cast<size_t>(total) < size) {
+            long n = sys6(SYS_read, fd, reinterpret_cast<long>(buffer + total),
+                          size - static_cast<size_t>(total), 0, 0, 0);
+            if (n <= 0) {
+                break;
+            }
+            total += n;
+        }
+    }
+    sys6(SYS_close, fd, 0, 0, 0, 0, 0);
+    return total;
+}
+
+bool system_library_modified() {
+    std::lock_guard<std::mutex> lock(g_lib_mutex);
+
+    std::string maps;
+    if (!slurp(ENC("/proc/self/maps").c_str(), maps, 8 * 1024 * 1024)) {
+        return false;
+    }
+
+    static const std::array<std::string, 3> kTokens = {
+        ENC("libc.so"),
+        ENC("libart.so"),
+        ENC("libandroid_runtime.so"),
+    };
+
+    const size_t window = sizeof(g_lib_buffer);
+    size_t position = 0;
+    bool modified = false;
+
+    while (position < maps.size() && !modified) {
+        size_t line_end = maps.find('\n', position);
+        if (line_end == std::string::npos) {
+            line_end = maps.size();
+        }
+        const char* line = maps.data() + position;
+        const size_t length = line_end - position;
+        position = line_end + 1;
+
+        size_t spaces[5];
+        int space_count = 0;
+        for (size_t i = 0; i < length && space_count < 5; ++i) {
+            if (line[i] == ' ') {
+                spaces[space_count++] = i;
+            }
+        }
+        if (space_count < 5 || length < spaces[0] + 4) {
+            continue;
+        }
+        if (std::memcmp(line + spaces[0] + 1, "r-xp", 4) != 0) {
+            continue;
+        }
+        const char* path = line + spaces[4] + 1;
+        const size_t path_length = length - spaces[4] - 1;
+        if (path_length == 0 || path[0] != '/') {
+            continue;
+        }
+        bool watched = false;
+        for (const auto& token : kTokens) {
+            if (has_token(path, path_length, token.c_str())) {
+                watched = true;
+                break;
+            }
+        }
+        if (!watched) {
+            continue;
+        }
+
+        uint64_t start = 0;
+        uint64_t end = 0;
+        uint64_t file_offset = 0;
+        if (!parse_hex(line, line + spaces[0], start)) {
+            continue;
+        }
+        const char* dash = static_cast<const char*>(std::memchr(line, '-', spaces[0]));
+        if (dash == nullptr || !parse_hex(dash + 1, line + spaces[0], end)) {
+            continue;
+        }
+        if (!parse_hex(line + spaces[1] + 1, line + spaces[2], file_offset)) {
+            continue;
+        }
+        if (end <= start) {
+            continue;
+        }
+
+        const size_t segment_size = static_cast<size_t>(end - start);
+        const size_t offset_in_segment = g_lib_rotation % segment_size;
+        size_t compare_size = segment_size - offset_in_segment;
+        if (compare_size > window) {
+            compare_size = window;
+        }
+        if (compare_size == 0) {
+            continue;
+        }
+
+        const std::string path_string(path, path_length);
+        const long read_bytes = read_file_range(
+            path_string.c_str(),
+            file_offset + offset_in_segment,
+            g_lib_buffer,
+            compare_size
+        );
+        if (read_bytes < 0 || static_cast<size_t>(read_bytes) != compare_size) {
+            // Unreadable file (SELinux, deleted mapping, ...): not evidence.
+            continue;
+        }
+        const auto* memory = reinterpret_cast<const unsigned char*>(start + offset_in_segment);
+        if (std::memcmp(memory, g_lib_buffer, compare_size) != 0) {
+            modified = true;
+        }
+    }
+
+    g_lib_rotation += window;
+    if (g_lib_rotation > (64 * 1024 * 1024)) {
+        g_lib_rotation = 0;
+    }
+    return modified;
+}
+
+// ---------------------------------------------------------------------------
+// PLT/GOT integrity
+//
+// Walks our own relocation table and compares each watched JUMP_SLOT entry with
+// the address `dlsym` resolves. A PLT-hooked function (e.g. `__system_property_get`
+// rewritten to fake the boot state) shows up as a mismatch.
+// ---------------------------------------------------------------------------
+
+#if defined(__aarch64__)
+constexpr size_t kJumpSlotType = R_AARCH64_JUMP_SLOT;
+#elif defined(__arm__)
+constexpr size_t kJumpSlotType = R_ARM_JUMP_SLOT;
+#elif defined(__x86_64__)
+constexpr size_t kJumpSlotType = R_X86_64_JUMP_SLOT;
+#else
+constexpr size_t kJumpSlotType = 0;
+#endif
+
+bool plt_modified() {
+    if (kJumpSlotType == 0) {
+        return false;
+    }
+
+    struct Finder {
+        uintptr_t base;
+        const ElfW(Dyn)* dynamic;
+    };
+    Finder finder{module_base(), nullptr};
+    if (finder.base == 0) {
+        return false;
+    }
+
+    dl_iterate_phdr(
+        [](struct dl_phdr_info* info, size_t, void* data) -> int {
+            auto* f = static_cast<Finder*>(data);
+            if (static_cast<uintptr_t>(info->dlpi_addr) != f->base) {
+                return 0;
+            }
+            for (int i = 0; i < info->dlpi_phnum; ++i) {
+                if (info->dlpi_phdr[i].p_type == PT_DYNAMIC) {
+                    f->dynamic = reinterpret_cast<const ElfW(Dyn)*>(
+                        info->dlpi_addr + info->dlpi_phdr[i].p_vaddr);
+                    return 1;
+                }
+            }
+            return 0;
+        },
+        &finder);
+    if (finder.dynamic == nullptr) {
+        return false;
+    }
+
+    const ElfW(Sym)* symtab = nullptr;
+    const char* strtab = nullptr;
+    const void* jmprel = nullptr;
+    uint64_t symtab_value = 0;
+    uint64_t strtab_value = 0;
+    uint64_t jmprel_value = 0;
+    size_t pltrelsz = 0;
+    size_t pltrel_type = 0;
+    for (const ElfW(Dyn)* dyn = finder.dynamic; dyn->d_tag != DT_NULL; ++dyn) {
+        switch (dyn->d_tag) {
+            case DT_SYMTAB:
+                symtab_value = dyn->d_un.d_ptr;
+                break;
+            case DT_STRTAB:
+                strtab_value = dyn->d_un.d_ptr;
+                break;
+            case DT_JMPREL:
+                jmprel_value = dyn->d_un.d_ptr;
+                break;
+            case DT_PLTRELSZ:
+                pltrelsz = static_cast<size_t>(dyn->d_un.d_val);
+                break;
+            case DT_PLTREL:
+                pltrel_type = static_cast<size_t>(dyn->d_un.d_val);
+                break;
+            default:
+                break;
+        }
+    }
+    if (symtab_value == 0 || strtab_value == 0 || jmprel_value == 0 || pltrelsz == 0) {
+        return false;
+    }
+
+    // The dynamic section is read-only: the linker does not relocate its DT_*
+    // pointer entries in memory, so the load bias must be added here (values may
+    // already be absolute on other loaders — treat anything >= base as absolute).
+    auto resolve = [&finder](uint64_t value) -> uintptr_t {
+        return value >= finder.base ? static_cast<uintptr_t>(value)
+                                    : finder.base + static_cast<uintptr_t>(value);
+    };
+    symtab = reinterpret_cast<const ElfW(Sym)*>(resolve(symtab_value));
+    strtab = reinterpret_cast<const char*>(resolve(strtab_value));
+    jmprel = reinterpret_cast<const void*>(resolve(jmprel_value));
+
+    static const std::array<std::string, 9> kWatched = {
+        ENC("__system_property_get"),
+        ENC("dladdr"),
+        ENC("dl_iterate_phdr"),
+        ENC("nanosleep"),
+        ENC("pthread_create"),
+        ENC("dlsym"),
+        ENC("atoi"),
+        ENC("memset"),
+        ENC("memcmp"),
+    };
+    auto is_watched = [](const char* name) {
+        for (const auto& watched : kWatched) {
+            if (std::strcmp(name, watched.c_str()) == 0) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    if (pltrel_type == DT_REL) {
+        const auto* rel = static_cast<const ElfW(Rel)*>(jmprel);
+        const size_t count = pltrelsz / sizeof(ElfW(Rel));
+        for (size_t i = 0; i < count; ++i) {
+            if (ELF32_R_TYPE(rel[i].r_info) != kJumpSlotType) {
+                continue;
+            }
+            const size_t symbol = static_cast<size_t>(ELF32_R_SYM(rel[i].r_info));
+            const char* name = strtab + symtab[symbol].st_name;
+            if (!is_watched(name)) {
+                continue;
+            }
+            const void* expected = dlsym(RTLD_DEFAULT, name);
+            const void* actual = *reinterpret_cast<const void* const*>(finder.base + rel[i].r_offset);
+            if (expected != nullptr && actual != expected) {
+                return true;
+            }
+        }
+    } else if (pltrel_type == DT_RELA) {
+        const auto* rela = static_cast<const ElfW(Rela)*>(jmprel);
+        const size_t count = pltrelsz / sizeof(ElfW(Rela));
+        for (size_t i = 0; i < count; ++i) {
+            if (ELF64_R_TYPE(rela[i].r_info) != kJumpSlotType) {
+                continue;
+            }
+            const size_t symbol = static_cast<size_t>(ELF64_R_SYM(rela[i].r_info));
+            const char* name = strtab + symtab[symbol].st_name;
+            if (!is_watched(name)) {
+                continue;
+            }
+            const void* expected = dlsym(RTLD_DEFAULT, name);
+            const void* actual = *reinterpret_cast<const void* const*>(finder.base + rela[i].r_offset);
+            if (expected != nullptr && actual != expected) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool scan_regions() {
     std::string maps;
     if (!slurp(ENC("/proc/self/maps").c_str(), maps, 8 * 1024 * 1024)) {
         return false;
     }
-    static const std::array<std::string, 5> kMarkers = {
+    static const std::array<std::string, 15> kMarkers = {
         ENC("frida"),
         ENC("xposed"),
         ENC("substrate"),
         ENC("lsposed"),
         ENC("libgum"),
+        ENC("liblspd"),
+        ENC("libriru"),
+        ENC("zygisk"),
+        ENC("sandhook"),
+        ENC("libepic"),
+        ENC("libdobby"),
+        ENC("shadowhook"),
+        ENC("libwhale"),
+        ENC("yahfa"),
+        ENC("libpine"),
     };
     for (const auto& marker : kMarkers) {
         if (has_token(maps, marker.c_str())) {
@@ -412,7 +757,7 @@ std::atomic<bool> g_risk{false};  // risk latched by the evaluator (signalRisk)
 bool watchdog_violation() {
     return g_risk.load() || scan_status() || scan_trace() || scan_regions() ||
            scan_root_mounts() || boot_state_modified() || suspicious_memory() ||
-           scan_verdict();
+           scan_verdict() || system_library_modified() || plt_modified();
 }
 
 void* watchdog_main(void* /*arg*/) {
@@ -505,6 +850,14 @@ void call_i(JNIEnv* /*env*/, jobject /*thiz*/, jboolean risk) {
     }
 }
 
+jboolean call_j(JNIEnv* /*env*/, jobject /*thiz*/) {
+    return system_library_modified() ? JNI_TRUE : JNI_FALSE;
+}
+
+jboolean call_k(JNIEnv* /*env*/, jobject /*thiz*/) {
+    return plt_modified() ? JNI_TRUE : JNI_FALSE;
+}
+
 const JNINativeMethod kMethods[] = {
     {const_cast<char*>("n1"), const_cast<char*>("()Z"),
      reinterpret_cast<void*>(&call_a)},
@@ -524,6 +877,10 @@ const JNINativeMethod kMethods[] = {
      reinterpret_cast<void*>(&call_h)},
     {const_cast<char*>("n9"), const_cast<char*>("(Z)V"),
      reinterpret_cast<void*>(&call_i)},
+    {const_cast<char*>("n10"), const_cast<char*>("()Z"),
+     reinterpret_cast<void*>(&call_j)},
+    {const_cast<char*>("n11"), const_cast<char*>("()Z"),
+     reinterpret_cast<void*>(&call_k)},
 };
 
 }  // namespace
