@@ -20,6 +20,9 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            // Debug signing key: this sample is a public, sideloadable demo.
+            // A real product would use its own release keystore here.
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

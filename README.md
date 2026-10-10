@@ -16,7 +16,8 @@ logs and no dialogs**.
 
 ## Try the sample APK
 
-A ready-to-install debug build is included: **[dist/KnightRASP-sample.apk](dist/KnightRASP-sample.apk)**
+A ready-to-install **release build** (R8-minified, signed with a debug key for
+sideloading) is included: **[dist/KnightRASP-sample.apk](dist/KnightRASP-sample.apk)**
 
 ```bash
 adb install -r dist/KnightRASP-sample.apk
