@@ -104,7 +104,7 @@ class RaspRuntimeImpl(
             telemetry = config.telemetry,
             hostActions = config.hostActions,
             killProcess = {
-                probes.native?.killProcess() ?: Process.killProcess(Process.myPid())
+                probes.native?.shutdown() ?: Process.killProcess(Process.myPid())
             },
         )
         registerForegroundCallbacks(app)

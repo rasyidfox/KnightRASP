@@ -1,7 +1,7 @@
 package io.knightrasp.probe.android
 
 import io.knightrasp.probe.ProcProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 import java.io.File
 import java.io.FileInputStream
 
@@ -114,11 +114,11 @@ class AndroidProcProbe : ProcProbe {
 
     private companion object {
         /** Obfuscated /proc paths and thread comm file name. */
-        val STATUS_PATH: String = ObfuscatedStrings.decode("1a45475a561a465059531a464154414046", 0x35)
-        val MAPS_PATH: String = ObfuscatedStrings.decode("4e11130e024e12040d074e0c001112", 0x61)
-        val CMDLINE_PATH: String = ObfuscatedStrings.decode("38676578743864727b7138747a737b7e7972", 0x17)
-        val TASK_DIR: String = ObfuscatedStrings.decode("540b09141854081e171d540f1a0810", 0x7B)
-        val COMM_FILE: String = ObfuscatedStrings.decode("6c606262", 0x0F)
+        val STATUS_PATH: String = TextCodec.decode("1a45475a561a465059531a464154414046", 0x35)
+        val MAPS_PATH: String = TextCodec.decode("4e11130e024e12040d074e0c001112", 0x61)
+        val CMDLINE_PATH: String = TextCodec.decode("38676578743864727b7138747a737b7e7972", 0x17)
+        val TASK_DIR: String = TextCodec.decode("540b09141854081e171d540f1a0810", 0x7B)
+        val COMM_FILE: String = TextCodec.decode("6c606262", 0x0F)
 
         const val MAX_STATUS_LINES = 512
         const val MAX_MAPS_BYTES = 4 * 1024 * 1024

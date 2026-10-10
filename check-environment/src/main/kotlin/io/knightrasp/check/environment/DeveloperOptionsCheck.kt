@@ -7,7 +7,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.SettingsProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 
 /** Developer options enabled. Weak signal; usually relevant only when combined with other signals. */
 class DeveloperOptionsCheck(private val settings: SettingsProbe) : RaspCheck {
@@ -29,7 +29,7 @@ class DeveloperOptionsCheck(private val settings: SettingsProbe) : RaspCheck {
 
         /** Obfuscated Settings.Global key. */
         val KEY_DEVELOPMENT_SETTINGS_ENABLED: String =
-            ObfuscatedStrings.decode("41405340494a5548404b517a564051514c4b42567a404b4447494041", 0x25)
+            TextCodec.decode("41405340494a5548404b517a564051514c4b42567a404b4447494041", 0x25)
 
         private const val ENABLED = 1
         private const val DEFAULT = 0

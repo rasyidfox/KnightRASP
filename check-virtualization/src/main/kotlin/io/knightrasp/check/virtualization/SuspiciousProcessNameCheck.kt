@@ -7,7 +7,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.ProcProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 
 /**
  * Process name contains virtual/parallel environment markers (e.g. `parallel`,
@@ -40,7 +40,7 @@ class SuspiciousProcessNameCheck(private val proc: ProcProbe) : RaspCheck {
         const val CONFIDENCE = 0.3f
 
         /** Obfuscated virtual/parallel environment process markers. */
-        val MARKERS: List<String> = ObfuscatedStrings.decodeList(
+        val MARKERS: List<String> = TextCodec.decodeList(
             "5f4e5d4e43434a4325594d40572559465d5b5a4e43254c4340414a5d255c4e414b4d4057",
             0x2F,
         )

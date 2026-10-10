@@ -6,7 +6,7 @@ import android.database.Cursor
 import android.net.Uri
 import io.knightrasp.Rasp
 import io.knightrasp.core.RaspRuntimeImpl
-import io.knightrasp.nativebridge.NativeProbeImpl
+import io.knightrasp.nativebridge.JniBridge
 import io.knightrasp.probe.android.AndroidProbes
 
 /**
@@ -21,7 +21,7 @@ class KnightRASPInitProvider : ContentProvider() {
 
     override fun onCreate(): Boolean {
         val appContext = context?.applicationContext ?: return false
-        val probes = AndroidProbes(appContext, NativeProbeImpl.createOrNull())
+        val probes = AndroidProbes(appContext, JniBridge.createOrNull())
         Rasp.attachRuntime(RaspRuntimeImpl(probes, DefaultChecks.list(probes)))
         return true
     }

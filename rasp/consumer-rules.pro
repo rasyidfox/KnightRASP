@@ -4,4 +4,4 @@
 -keep class io.knightrasp.internal.KnightRASPInitProvider { *; }
 
 # JNI: native class & method names are a contract with libknightrasp.so.
--keep class io.knightrasp.nativebridge.NativeProbeImpl { *; }
+-keep class io.knightrasp.nativebridge.JniBridge { *; }

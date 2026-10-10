@@ -9,7 +9,7 @@ package io.knightrasp.util
  * it does not hide anything from a determined attacker (see README hardening
  * notes). Internal use only.
  */
-object ObfuscatedStrings {
+object TextCodec {
 
     /** Decodes a hex string back to text using a single-byte XOR key. */
     @JvmStatic

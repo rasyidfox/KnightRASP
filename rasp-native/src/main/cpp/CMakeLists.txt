@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22.1)
-project(knightrasp_native CXX)
+project(native_support CXX)
 
 # The output library name is configurable from Gradle (knightrasp.nativeLibName)
 # so it does not contain "rasp". The value must match System.loadLibrary() in
@@ -8,7 +8,7 @@ if(NOT DEFINED NATIVE_LIB_NAME)
     set(NATIVE_LIB_NAME "guardcore")
 endif()
 
-add_library(${NATIVE_LIB_NAME} SHARED knightrasp.cpp)
+add_library(${NATIVE_LIB_NAME} SHARED bridge.cpp)
 
 target_compile_features(${NATIVE_LIB_NAME} PRIVATE cxx_std_17)
 

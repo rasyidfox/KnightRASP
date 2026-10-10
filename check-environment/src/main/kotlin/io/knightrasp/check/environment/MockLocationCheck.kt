@@ -7,7 +7,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.SettingsProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 
 /**
  * Mock location enabled (`Settings.Secure`). On modern Android this flag maps directly
@@ -33,7 +33,7 @@ class MockLocationCheck(private val settings: SettingsProbe) : RaspCheck {
 
         /** Obfuscated Settings.Secure key. */
         val KEY_MOCK_LOCATION: String =
-            ObfuscatedStrings.decode("74767a724675767a786d707677", 0x19)
+            TextCodec.decode("74767a724675767a786d707677", 0x19)
 
         private const val ENABLED = 1
         private const val DEFAULT = 0

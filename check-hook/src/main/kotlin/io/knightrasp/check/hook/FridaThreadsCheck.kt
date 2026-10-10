@@ -7,7 +7,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.ProcProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 
 /**
  * Frida-specific thread names (`gmain`, `gdbus`, `gum-js-loop`, `pool-frida`) appear in
@@ -39,7 +39,7 @@ class FridaThreadsCheck(private val proc: ProcProbe) : RaspCheck {
         const val CONFIDENCE = 0.8f
 
         /** Obfuscated Frida thread-name markers. */
-        val MARKERS: List<String> = ObfuscatedStrings.decodeList(
+        val MARKERS: List<String> = TextCodec.decodeList(
             "040e020a0d6904070116106904160e4e09104e0f0c0c1369130c0c0f4e05110a07026905110a0702",
             0x63,
         )

@@ -95,19 +95,19 @@ class TestSystemProbe : SystemProbe {
 
 /** Fake [NativeProbe]; everything defaults to negative (clean device). */
 class TestNativeProbe : NativeProbe {
-    override var libraryFileName: String = "libguardcore.so"
+    override var moduleName: String = "libguardcore.so"
     var debuggerDetected = false
     var textModified = false
     var hooked = false
     var killCalled = false
 
-    override fun isDebuggerDetected(): Boolean = debuggerDetected
+    override fun signalA(): Boolean = debuggerDetected
 
-    override fun isTextModified(): Boolean = textModified
+    override fun signalC(): Boolean = textModified
 
-    override fun isHooked(): Boolean = hooked
+    override fun signalB(): Boolean = hooked
 
-    override fun killProcess() {
+    override fun shutdown() {
         killCalled = true
     }
 }

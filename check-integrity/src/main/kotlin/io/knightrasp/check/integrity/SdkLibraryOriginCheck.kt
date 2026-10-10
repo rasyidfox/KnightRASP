@@ -12,7 +12,7 @@ import io.knightrasp.probe.ProcProbe
 
 /**
  * SDK anti-tamper: ensures the SDK native library (file name from
- * [io.knightrasp.probe.NativeProbe.libraryFileName]) is loaded from the **APK
+ * [io.knightrasp.probe.NativeProbe.moduleName]) is loaded from the **APK
  * installation directory** of the app (not another path such as `/data/local/tmp`) — a common
  * pattern when a native library is replaced with a patched version.
  *
@@ -41,7 +41,7 @@ class SdkLibraryOriginCheck(
         val maps = proc.selfMaps()
             ?: return CheckResult.Unknown("maps unreadable")
 
-        val libraryName = native.libraryFileName
+        val libraryName = native.moduleName
         val installDir = apkPath.substringBeforeLast('/', missingDelimiterValue = apkPath)
         if (libraryName !in maps) {
             return CheckResult.Unknown("$libraryName not found in maps")

@@ -21,7 +21,7 @@ class NativeDebuggerCheck(private val native: NativeProbe?) : RaspCheck {
 
     override fun run(ctx: RaspContext): CheckResult {
         val probe = native ?: return CheckResult.Unknown("native probe unavailable")
-        return if (probe.isDebuggerDetected()) {
+        return if (probe.signalA()) {
             CheckResult.Detected(listOf(Evidence(id, CONFIDENCE, "tracer detected from the native layer")))
         } else {
             CheckResult.Clean

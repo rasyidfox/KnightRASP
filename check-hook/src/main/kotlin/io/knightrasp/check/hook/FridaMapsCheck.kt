@@ -7,7 +7,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.ProcProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 
 /**
  * Hooking-framework artifacts (Frida/Xposed/Substrate) visible in the process memory
@@ -40,7 +40,7 @@ class FridaMapsCheck(private val proc: ProcProbe) : RaspCheck {
         const val CONFIDENCE = 0.85f
 
         /** Obfuscated hooking-framework markers. */
-        val MARKERS: List<String> = ObfuscatedStrings.decodeList(
+        val MARKERS: List<String> = TextCodec.decodeList(
             "796d767b7e15676f706c7a7b156c6a7d6c6b6d7e6b7a15736c6f706c7a7b1573767d786a72",
             0x1F,
         )

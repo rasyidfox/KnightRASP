@@ -7,7 +7,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.SystemProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 
 /** A build tagged `test-keys` means the image is not signed with release keys. */
 class TestKeysCheck(private val system: SystemProbe) : RaspCheck {
@@ -29,6 +29,6 @@ class TestKeysCheck(private val system: SystemProbe) : RaspCheck {
         const val CONFIDENCE = 0.4f
 
         /** Obfuscated "test-keys". */
-        private val TEST_KEYS_MARKER: String = ObfuscatedStrings.decode("5d4c5a5d04424c505a", 0x29)
+        private val TEST_KEYS_MARKER: String = TextCodec.decode("5d4c5a5d04424c505a", 0x29)
     }
 }

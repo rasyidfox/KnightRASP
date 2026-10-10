@@ -1,7 +1,7 @@
 package io.knightrasp.nativebridge
 
 import io.knightrasp.probe.NativeProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 
 /**
  * [NativeProbe] implementation backed by the SDK's native library.
@@ -19,31 +19,31 @@ import io.knightrasp.util.ObfuscatedStrings
  * without updating `knightrasp.cpp`; the `rasp` module ships a ProGuard rule to
  * keep this class intact.
  */
-class NativeProbeImpl private constructor() : NativeProbe {
+class JniBridge private constructor() : NativeProbe {
 
-    override val libraryFileName: String = "lib${decodedLibraryName()}.so"
+    override val moduleName: String = "lib${decodedLibraryName()}.so"
 
-    override fun isDebuggerDetected(): Boolean = nativeAntiDebug()
+    override fun signalA(): Boolean = n1()
 
-    override fun isHooked(): Boolean = nativeAntiHook()
+    override fun signalB(): Boolean = n2()
 
-    override fun isTextModified(): Boolean = nativeTextIntegrity()
+    override fun signalC(): Boolean = n3()
 
-    override fun killProcess() {
-        nativeKillProcess()
+    override fun shutdown() {
+        n4()
     }
 
-    private external fun nativeAntiDebug(): Boolean
+    private external fun n1(): Boolean
 
-    private external fun nativeAntiHook(): Boolean
+    private external fun n2(): Boolean
 
-    private external fun nativeTextIntegrity(): Boolean
+    private external fun n3(): Boolean
 
-    private external fun nativeKillProcess()
+    private external fun n4()
 
     companion object {
         private fun decodedLibraryName(): String =
-            ObfuscatedStrings.decode(
+            TextCodec.decode(
                 BuildConfig.NATIVE_LIB_NAME_OBF,
                 BuildConfig.NATIVE_LIB_NAME_KEY,
             )
@@ -57,6 +57,6 @@ class NativeProbeImpl private constructor() : NativeProbe {
 
         /** Native probe, or null when the library is unavailable on this build/ABI. */
         @JvmStatic
-        fun createOrNull(): NativeProbe? = if (available) NativeProbeImpl() else null
+        fun createOrNull(): NativeProbe? = if (available) JniBridge() else null
     }
 }

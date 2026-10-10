@@ -15,7 +15,7 @@ import io.knightrasp.telemetry.TelemetrySink
  * `Logout`, `BlockSensitiveOps`) are skipped and only logged.
  *
  * @param killProcess action for [Response.Exit]; defaults to `android.os.Process`.
- *   The production runtime routes it to `NativeProbe.killProcess` (raw syscall)
+ *   The production runtime routes it to `NativeProbe.shutdown` (raw syscall)
  *   when available.
  */
 class ResponseExecutor(

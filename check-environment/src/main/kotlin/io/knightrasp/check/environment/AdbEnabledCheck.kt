@@ -7,7 +7,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.SettingsProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 
 /** ADB enabled on the device. Medium confidence: it eases external instrumentation. */
 class AdbEnabledCheck(private val settings: SettingsProbe) : RaspCheck {
@@ -29,7 +29,7 @@ class AdbEnabledCheck(private val settings: SettingsProbe) : RaspCheck {
 
         /** Obfuscated Settings.Global key. */
         val KEY_ADB_ENABLED: String =
-            ObfuscatedStrings.decode("06030538020906050b0203", 0x67)
+            TextCodec.decode("06030538020906050b0203", 0x67)
 
         private const val ENABLED = 1
         private const val DEFAULT = 0

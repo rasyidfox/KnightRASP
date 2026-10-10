@@ -7,7 +7,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.ProcProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 
 /**
  * A non-zero `TracerPid` in `/proc/self/status` means the process is being ptraced
@@ -37,6 +37,6 @@ class TracerPidCheck(private val proc: ProcProbe) : RaspCheck {
 
         /** Obfuscated regex `TracerPid:\s*(\d+)`. */
         private val TRACER_PID_PATTERN: Regex =
-            Regex(ObfuscatedStrings.decode("193f2c2e283f1d242977113e676511296664", 0x4D))
+            Regex(TextCodec.decode("193f2c2e283f1d242977113e676511296664", 0x4D))
     }
 }

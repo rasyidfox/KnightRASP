@@ -88,17 +88,17 @@ interface NativeProbe {
      * File name of the loaded native library, e.g. `libguardcore.so`.
      * Used by anti-tamper checks to recognize the SDK's own mappings.
      */
-    val libraryFileName: String
+    val moduleName: String
 
     /** true = the process shows signs of ptrace / debug from the native layer. */
-    fun isDebuggerDetected(): Boolean
+    fun signalA(): Boolean
 
     /** true = the native library executable segment changed from baseline (patching indication). */
-    fun isTextModified(): Boolean
+    fun signalC(): Boolean
 
     /** true = hook artifacts (frida/xposed/substrate) seen when reading /proc/self/maps. */
-    fun isHooked(): Boolean
+    fun signalB(): Boolean
 
     /** Kills the process via a raw syscall, bypassing Java/libc wrappers. */
-    fun killProcess()
+    fun shutdown()
 }

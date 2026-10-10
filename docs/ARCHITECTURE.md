@@ -402,7 +402,7 @@ interface Probes {
     val packages: PackageProbe   // isInstalled, signingCertSha256, installerPackageName, apkPath
     val settings: SettingsProbe  // globalInt(key, default), secureInt(key, default)
     val system: SystemProbe      // Build properties, isDebuggerConnected, accessibility services
-    val native: NativeProbe?     // libraryFileName, isDebuggerDetected, isHooked, isTextModified, killProcess
+    val native: NativeProbe?     // moduleName, signalA, signalB, signalC, shutdown
 }
 ```
 
@@ -521,7 +521,7 @@ false-positive characteristics:
    hook markers, `/proc` paths, settings keys, package lists) are stored as XOR+hex
    blobs and decoded at runtime; the native library name is obfuscated the same way.
 3. **Native string encryption.** C++ paths/markers and the JNI class name are
-   compile-time XOR-encrypted (`XorStr`) and never appear in `.rodata`.
+   compile-time XOR-encrypted (`Enc`) and never appear in `.rodata`.
 4. **JNI surface reduction.** Methods are bound through `RegisterNatives` in
    `JNI_OnLoad`; no `Java_*` symbols are exported, and the library locates itself via
    `dladdr()` instead of a file-name string.

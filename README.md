@@ -32,7 +32,14 @@ What to expect:
   crash dialog. To explore the UI on such devices, build from source with
   `Environment.QA` or disable the relevant checks (see Configuration below).
 
-The APK is debug-signed and meant for evaluation only.
+The APK is signed with a debug key and meant for evaluation only.
+
+> **Obfuscation note.** The distributed sample is a release build, so the consumer's
+> R8 renames all internal SDK classes (`io.knightrasp.check.*`, `probe.*`, `core.*`)
+> — only the public contract keeps its names (plus the JNI class, which
+> `RegisterNatives` resolves by name). Inspecting a **debug** build or the raw AAR
+> will still show original class names; that is the standard Android model, since
+> AARs ship unminified bytecode and R8 runs when the host app is packaged.
 
 ---
 
@@ -343,7 +350,7 @@ ScreenGuard.enableSecure(activity)
 - **Rename the native library**: `knightrasp.nativeLibName` property (see Installation).
 - **Custom checks**: implement `RaspCheck`, then attach a custom runtime:
   ```kotlin
-  val probes = AndroidProbes(context, NativeProbeImpl.createOrNull())
+  val probes = AndroidProbes(context, JniBridge.createOrNull())
   Rasp.attachRuntime(RaspRuntimeImpl(probes, DefaultChecks.list(probes) + MyCustomCheck()))
   ```
 - **Exercise the pipeline without a device**: `./gradlew :rasp:testDebugUnitTest --tests "io.knightrasp.internal.PipelineDemoTest"`
@@ -430,8 +437,9 @@ What is already in place:
 | Layer | Measure |
 |---|---|
 | Kotlin/Java | Release builds contain **no logging code and no log strings** — the release logger is a compile-time no-op and every call site is gated by `const ENABLED = false`, so R8 removes them. |
-| Kotlin/Java | Detection-sensitive constants (root paths, Magisk packages, hook markers, `/proc` paths, settings keys, cloner packages) are stored as **XOR+hex blobs** and decoded at runtime (`ObfuscatedStrings`); no plaintext markers remain in the dex. |
+| Kotlin/Java | Detection-sensitive constants (root paths, Magisk packages, hook markers, `/proc` paths, settings keys, cloner packages) are stored as **XOR+hex blobs** and decoded at runtime (`TextCodec`); no plaintext markers remain in the dex. |
 | Kotlin/Java | The native library name is decoded at runtime from an obfuscated `BuildConfig` value. |
+| Kotlin/Java | Consumer ProGuard rules keep **only the public contract** (`check.*`/`probe.*` use a single `*`, so internal implementations in subpackages are renamed by the host app's R8 in release builds). |
 | Native | Sensitive C++ strings (paths, markers, JNI class name) are **compile-time XOR-encrypted** and never appear in `.rodata`. |
 | Native | JNI methods are bound with **`RegisterNatives`** in `JNI_OnLoad` — no `Java_*` symbols are exported (only `JNI_OnLoad`), so symbol-based fingerprinting and hook targeting get harder. |
 | Native | The library identifies its own module via **`dladdr()`**, so no file-name string is needed internally. |

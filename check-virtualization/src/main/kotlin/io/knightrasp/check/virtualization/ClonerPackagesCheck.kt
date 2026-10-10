@@ -7,7 +7,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.PackageProbe
-import io.knightrasp.util.ObfuscatedStrings
+import io.knightrasp.util.TextCodec
 
 /**
  * Installed app-cloner / parallel-space hosts. Their presence does not automatically
@@ -33,7 +33,7 @@ class ClonerPackagesCheck(private val packages: PackageProbe) : RaspCheck {
         const val CONFIDENCE = 0.35f
 
         /** Obfuscated app-cloner / parallel-space host packages. */
-        val CLONER_PACKAGES: List<String> = ObfuscatedStrings.decodeList(
+        val CLONER_PACKAGES: List<String> = TextCodec.decodeList(
             "202c2e6d2f21266d332231222f2f262f49202c2e6d2f21266d332231222f2f262f6d2a2d372f49202c2e6d26" +
                 "3b20262f2f2a222d20266d2e362f372a2220202c362d373049202c2e6d263b20262f2f2a222d20266d2736" +
                 "222f222a2749202c2e6d332c2f26303722316d272c2e362f372a332f2649202c2e6d332c2f26303722316d" +

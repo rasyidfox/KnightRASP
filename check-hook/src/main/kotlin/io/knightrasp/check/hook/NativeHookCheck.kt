@@ -20,7 +20,7 @@ class NativeHookCheck(private val native: NativeProbe?) : RaspCheck {
 
     override fun run(ctx: RaspContext): CheckResult {
         val probe = native ?: return CheckResult.Unknown("native probe unavailable")
-        return if (probe.isHooked()) {
+        return if (probe.signalB()) {
             CheckResult.Detected(listOf(Evidence(id, CONFIDENCE, "hook artifacts visible to the native probe")))
         } else {
             CheckResult.Clean

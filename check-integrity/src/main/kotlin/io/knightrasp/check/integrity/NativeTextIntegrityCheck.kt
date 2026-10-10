@@ -21,7 +21,7 @@ class NativeTextIntegrityCheck(private val native: NativeProbe?) : RaspCheck {
 
     override fun run(ctx: RaspContext): CheckResult {
         val probe = native ?: return CheckResult.Unknown("native probe unavailable")
-        return if (probe.isTextModified()) {
+        return if (probe.signalC()) {
             CheckResult.Detected(
                 listOf(Evidence(id, CONFIDENCE, "library executable segment changed from baseline"))
             )
