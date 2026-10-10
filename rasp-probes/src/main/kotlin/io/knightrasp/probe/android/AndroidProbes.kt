@@ -1,6 +1,7 @@
 package io.knightrasp.probe.android
 
 import android.content.Context
+import io.knightrasp.probe.AttestationProbe
 import io.knightrasp.probe.FileProbe
 import io.knightrasp.probe.NativeProbe
 import io.knightrasp.probe.PackageProbe
@@ -27,4 +28,5 @@ class AndroidProbes(
     override val packages: PackageProbe = AndroidPackageProbe(appContext)
     override val settings: SettingsProbe = AndroidSettingsProbe(appContext)
     override val system: SystemProbe = AndroidSystemProbe(appContext)
+    override val attestation: AttestationProbe = AndroidAttestationProbe()
 }

@@ -2,6 +2,7 @@ package io.knightrasp
 
 import android.app.Application
 import io.knightrasp.config.RaspConfig
+import io.knightrasp.model.KeyAttestationCallback
 import io.knightrasp.model.ThreatAssessment
 import io.knightrasp.model.Trigger
 
@@ -22,6 +23,13 @@ interface RaspRuntime {
     fun addListener(listener: RaspListener)
 
     fun removeListener(listener: RaspListener)
+
+    /**
+     * Requests a hardware-backed key attestation. The certificate chain is meant
+     * to be sent to the backend for verification against Google's roots; the
+     * parsed fields are client-side signals only.
+     */
+    fun requestKeyAttestation(nonce: String?, callback: KeyAttestationCallback)
 
     fun shutdown()
 }

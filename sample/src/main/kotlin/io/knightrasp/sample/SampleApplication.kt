@@ -42,6 +42,12 @@ class SampleApplication : Application() {
                 debugLogging = false,
             ),
         )
+
+        // Key attestation example (send the chain to your backend for verification):
+        //
+        // Rasp.requestKeyAttestation(serverNonce) { result ->
+        //     if (result != null) backend.verifyKeyAttestation(result.certificateChain)
+        // }
     }
 
     private fun createTelemetry(): QueuedTelemetrySink {

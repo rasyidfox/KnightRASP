@@ -1,6 +1,6 @@
 # Check Catalog
 
-Full list of the **25 checks** in KnightRASP. Every check produces *evidence* with a
+Full list of the **26 checks** in KnightRASP. Every check produces *evidence* with a
 `confidence` in 0..1; the final score is computed by the engine (noisy-OR per category
 + a small cross-category bonus) — see
 [README](../README.md#policy-responses-and-silent-mode).
@@ -47,6 +47,7 @@ Full list of the **25 checks** in KnightRASP. Every check produces *evidence* wi
 | `integrity.installer` | LOW | 0.50 (sideload) / 0.60 (other installer) | `allowedInstallers` | Installation source outside the allow-list (e.g. `com.android.vending`). |
 | `integrity.native_text` | LOW | 0.90 | native | Compares the executable segment against a **build-time pinned digest** (filled after stripping; detects pre-load patching such as gadget/spawn or a repackaged `.so`) and against a load-time baseline (post-load inline hooks / memory patches). |
 | `integrity.sdk_library_origin` | MEDIUM | 0.85 | native | Verifies the SDK native library is loaded from the app install directory, not `/data/local/tmp` or elsewhere. |
+| `integrity.key_attestation` | HIGH | 0.60 / 0.50 | TEE | Hardware key attestation (AndroidKeyStore): `deviceLocked=false` and a non-verified `verifiedBootState` from the RootOfTrust extension. Client-side signals only — verify the certificate chain against Google's roots on the server (`Rasp.requestKeyAttestation`). Reports Unknown when attestation is software-level or unavailable. |
 
 ## EMULATOR
 

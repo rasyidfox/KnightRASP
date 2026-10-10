@@ -13,6 +13,22 @@ interface Probes {
 
     /** Native probe; null when the native library is unavailable (e.g. NDK-less variant). */
     val native: NativeProbe?
+
+    /** Hardware key attestation; null when unavailable (e.g. API < 24, no TEE). */
+    val attestation: AttestationProbe?
+}
+
+/**
+ * Hardware-backed key attestation (AndroidKeyStore). Implementations must
+ * generate an ephemeral attested key per call (the challenge is only honored at
+ * key generation) and delete it afterwards.
+ */
+interface AttestationProbe {
+    /**
+     * Generates an attested key for [nonce] and returns the certificate chain.
+     * Null when attestation is unavailable or fails.
+     */
+    fun attest(nonce: String?): io.knightrasp.model.KeyAttestationResult?
 }
 
 interface FileProbe {

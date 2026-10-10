@@ -13,6 +13,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.config.Mode
 import io.knightrasp.config.MultiProcessMode
 import io.knightrasp.config.RaspConfig
+import io.knightrasp.model.KeyAttestationCallback
 import io.knightrasp.model.Level
 import io.knightrasp.model.RaspError
 import io.knightrasp.model.ThreatAssessment
@@ -185,6 +186,18 @@ class RaspRuntimeImpl(
 
     override fun removeListener(listener: RaspListener) {
         listeners.remove(listener)
+    }
+
+    override fun requestKeyAttestation(nonce: String?, callback: KeyAttestationCallback) {
+        val probe = probes.attestation
+        if (probe == null) {
+            mainHandler.post { runCatching { callback.onResult(null) } }
+            return
+        }
+        scope.launch {
+            val result = runCatching { probe.attest(nonce) }.getOrNull()
+            mainHandler.post { runCatching { callback.onResult(result) } }
+        }
     }
 
     override fun shutdown() {

@@ -5,7 +5,7 @@ SDK that detects runtime threats (root, hooking, debuggers, tampering, emulators
 virtualization) and reacts according to your policy, including **silent kill with no
 logs and no dialogs**.
 
-- 25 checks across 7 categories, evidence-based with confidence scores (not booleans)
+- 26 checks across 7 categories, evidence-based with confidence scores (not booleans)
 - Native anti-debug / anti-hook / integrity via C++ and raw syscalls (JNI)
 - Telemetry queue, signed remote rules, Play Integrity — all optional
 - Latest review: 114 unit tests passing, tested on a real device (Android 13)
@@ -325,6 +325,24 @@ gateway.requestToken(nonce = serverNonce) { token, error ->
 Requirements: the app is distributed through Google Play and the cloud project is
 linked in Play Console.
 
+### Key attestation (optional, hardware-backed)
+
+The SDK can obtain a hardware-backed attestation certificate chain
+(AndroidKeyStore, TEE/StrongBox) for **server-side** verification:
+
+```kotlin
+Rasp.requestKeyAttestation(serverNonce) { result ->
+    if (result == null) return@requestKeyAttestation // unavailable/failed
+    backend.verifyKeyAttestation(result.certificateChain, serverNonce)
+    // Client-side signals (not proof): result.deviceLocked, result.verifiedBootState
+}
+```
+
+Unlike `ro.boot.*` properties — which a rooted device can spoof with `resetprop` —
+these values are signed by the TEE and chained to Google's roots, so the backend
+should verify the chain. The built-in check `integrity.key_attestation` reads the
+same fields locally as one more signal.
+
 ---
 
 ## Utilities
@@ -359,7 +377,7 @@ ScreenGuard.enableSecure(activity)
 
 ## Check catalog
 
-25 checks, 7 categories — the full list with confidence, cost, and required
+26 checks, 7 categories — the full list with confidence, cost, and required
 configuration is in [docs/CHECKS.md](docs/CHECKS.md). Summary:
 
 | Category | Checks |
@@ -367,7 +385,7 @@ configuration is in [docs/CHECKS.md](docs/CHECKS.md). Summary:
 | ROOT | `root.su_binary`, `root.magisk_artifacts`, `root.test_keys`, `root.native_mounts`, `root.bootloader_state` |
 | DEBUG | `debug.debugger_connected`, `debug.tracer_pid`, `debug.native_ptrace` |
 | HOOK | `hook.frida_threads`, `hook.maps_artifacts`, `hook.native_maps`, `hook.injected_memory` |
-| INTEGRITY | `integrity.signature`, `integrity.installer`, `integrity.native_text`, `integrity.sdk_library_origin` |
+| INTEGRITY | `integrity.signature`, `integrity.installer`, `integrity.native_text`, `integrity.sdk_library_origin`, `integrity.key_attestation` |
 | EMULATOR | `emulator.props`, `emulator.files`, `emulator.cpuinfo` |
 | ENVIRONMENT | `env.developer_options`, `env.adb_enabled`, `env.mock_location`, `env.accessibility_services` |
 | VIRTUALIZATION | `virtualization.cloner_app`, `virtualization.process_name` |

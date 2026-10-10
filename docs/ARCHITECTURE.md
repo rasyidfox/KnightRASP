@@ -403,6 +403,7 @@ interface Probes {
     val settings: SettingsProbe  // globalInt(key, default), secureInt(key, default)
     val system: SystemProbe      // Build properties, isDebuggerConnected, accessibility services
     val native: NativeProbe?     // moduleName, signalA..signalF, shutdown
+    val attestation: AttestationProbe? // hardware key attestation (TEE/StrongBox)
 }
 ```
 
@@ -556,6 +557,11 @@ false-positive characteristics:
 13. **`inline` codec.** `TextCodec.decode`/`decodeList` are inlined into every call
     site, removing the single choke point that a runtime hook could use to dump all
     obfuscated constants.
+14. **Hardware key attestation.** `integrity.key_attestation` (and the
+    `Rasp.requestKeyAttestation` API) reads the RootOfTrust fields from a TEE-signed
+    certificate chain generated in AndroidKeyStore. Client-side it is one more
+    signal; the backend verifies the chain against Google's roots, which — unlike
+    `ro.boot.*` properties — cannot be spoofed with `resetprop`.
 
 ---
 

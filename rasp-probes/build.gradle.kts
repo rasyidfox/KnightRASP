@@ -29,6 +29,8 @@ kotlin {
 
 dependencies {
     api(project(":rasp-api"))
+
+    testImplementation(libs.junit)
 }
 
 android {

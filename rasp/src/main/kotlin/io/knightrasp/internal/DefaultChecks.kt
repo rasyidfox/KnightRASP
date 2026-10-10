@@ -16,6 +16,7 @@ import io.knightrasp.check.hook.FridaThreadsCheck
 import io.knightrasp.check.hook.InjectedMemoryCheck
 import io.knightrasp.check.hook.NativeHookCheck
 import io.knightrasp.check.integrity.InstallerCheck
+import io.knightrasp.check.integrity.KeyAttestationCheck
 import io.knightrasp.check.integrity.NativeTextIntegrityCheck
 import io.knightrasp.check.integrity.SdkLibraryOriginCheck
 import io.knightrasp.check.integrity.SignatureCheck
@@ -61,6 +62,7 @@ object DefaultChecks {
         InstallerCheck(probes.packages),
         NativeTextIntegrityCheck(probes.native),
         SdkLibraryOriginCheck(probes.proc, probes.packages, probes.native),
+        KeyAttestationCheck(probes.attestation),
         // Virtualization
         ClonerPackagesCheck(probes.packages),
         SuspiciousProcessNameCheck(probes.proc),

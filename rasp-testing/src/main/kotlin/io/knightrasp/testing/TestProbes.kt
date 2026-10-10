@@ -138,10 +138,22 @@ class TestNativeProbe : NativeProbe {
 
 class TestProbes(
     override val native: NativeProbe? = TestNativeProbe(),
+    override val attestation: io.knightrasp.probe.AttestationProbe? = TestAttestationProbe(),
 ) : Probes {
     override val file = TestFileProbe()
     override val proc = TestProcProbe()
     override val packages = TestPackageProbe()
     override val settings = TestSettingsProbe()
     override val system = TestSystemProbe()
+}
+
+/** Fake [io.knightrasp.probe.AttestationProbe]; returns [result] for every call. */
+class TestAttestationProbe : io.knightrasp.probe.AttestationProbe {
+    var result: io.knightrasp.model.KeyAttestationResult? = null
+    var lastNonce: String? = null
+
+    override fun attest(nonce: String?): io.knightrasp.model.KeyAttestationResult? {
+        lastNonce = nonce
+        return result
+    }
 }

@@ -2,6 +2,7 @@ package io.knightrasp
 
 import android.app.Application
 import io.knightrasp.config.RaspConfig
+import io.knightrasp.model.KeyAttestationCallback
 import io.knightrasp.model.RaspError
 import io.knightrasp.model.ThreatAssessment
 import io.knightrasp.model.Trigger
@@ -78,6 +79,24 @@ object Rasp {
     fun addListener(listener: RaspListener) {
         listeners.addIfAbsent(listener)
         runtime?.addListener(listener)
+    }
+
+    /**
+     * Requests hardware-backed key attestation (AndroidKeyStore, TEE/StrongBox).
+     * Send the certificate chain to your backend and verify it against Google's
+     * root certificates; do not trust the client-side parsed fields alone.
+     * [callback] is invoked on the main thread (null result = unavailable/failed).
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun requestKeyAttestation(nonce: String? = null, callback: KeyAttestationCallback) {
+        val runtime = runtime
+        if (runtime == null) {
+            reportError(RaspError(RaspError.Code.NOT_INITIALIZED, "RASP has no runtime attached."))
+            callback.onResult(null)
+            return
+        }
+        runtime.requestKeyAttestation(nonce, callback)
     }
 
     @JvmStatic
