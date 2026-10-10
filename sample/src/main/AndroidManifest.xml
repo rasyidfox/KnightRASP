@@ -4,7 +4,7 @@
     <application
         android:name=".SampleApplication"
         android:label="KnightRASP sample"
-        android:theme="@android:style/Theme.DeviceDefault.Light">
+        android:theme="@style/AppTheme">
 
         <activity
             android:name=".MainActivity"

@@ -117,9 +117,10 @@ interface NativeProbe {
     fun watchdog(enabled: Boolean, killOnEvidence: Boolean, intervalMs: Int)
 
     /**
-     * Reports a high-risk verdict from the evaluator to the native layer; when
-     * the watchdog is in kill mode this terminates the process even if the
-     * Kotlin response path was tampered with.
+     * Reports a high-risk verdict from the evaluator to the native layer. The
+     * native side latches it; the Kotlin response path performs the actual
+     * termination (so the foreground task can be removed first), and the watchdog
+     * acts as a last resort if Kotlin never does.
      */
     fun signalRisk(detected: Boolean)
 

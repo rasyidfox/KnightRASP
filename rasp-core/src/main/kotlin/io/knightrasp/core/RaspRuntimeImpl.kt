@@ -18,6 +18,7 @@ import io.knightrasp.model.RaspError
 import io.knightrasp.model.ThreatAssessment
 import io.knightrasp.model.Trigger
 import io.knightrasp.probe.Probes
+import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.cancellation.CancellationException
@@ -51,6 +52,13 @@ class RaspRuntimeImpl(
 
     /** Check execution scope; separate so stragglers do not hold up the scan. */
     private val workScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private val terminating = AtomicBoolean(false)
+
+    @Volatile
+    private var currentActivity: WeakReference<Activity>? = null
+
+    private val killDelayMs = 500L
 
     private val listeners = CopyOnWriteArrayList<RaspListener>()
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -105,9 +113,7 @@ class RaspRuntimeImpl(
             mode = config.mode,
             telemetry = config.telemetry,
             hostActions = config.hostActions,
-            killProcess = {
-                probes.native?.shutdown() ?: Process.killProcess(Process.myPid())
-            },
+            killProcess = ::terminate,
         )
         probes.native?.watchdog(
             enabled = config.watchdogEnabled,
@@ -251,14 +257,44 @@ class RaspRuntimeImpl(
             }
 
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
-            override fun onActivityResumed(activity: Activity) {}
+            override fun onActivityResumed(activity: Activity) {
+                currentActivity = WeakReference(activity)
+            }
+
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {}
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
-            override fun onActivityDestroyed(activity: Activity) {}
+            override fun onActivityDestroyed(activity: Activity) {
+                if (currentActivity?.get() === activity) {
+                    currentActivity = null
+                }
+            }
         }
         app.registerActivityLifecycleCallbacks(callbacks)
         lifecycleCallbacks = callbacks
+    }
+
+    /**
+     * Terminates the process. When a foreground activity is known, the task is
+     * removed first and the kill is delayed briefly: killing a foreground task
+     * without removing it makes the platform relaunch the activity in a loop
+     * (visible as a repeating blank/white launch screen).
+     */
+    private fun terminate() {
+        if (!terminating.compareAndSet(false, true)) {
+            return
+        }
+        val activity = currentActivity?.get()
+        if (activity != null) {
+            runCatching { activity.finishAndRemoveTask() }
+            mainHandler.postDelayed(::killNow, killDelayMs)
+        } else {
+            killNow()
+        }
+    }
+
+    private fun killNow() {
+        probes.native?.shutdown() ?: Process.killProcess(Process.myPid())
     }
 
     private fun reportCheckFailure(checkId: String, cause: Throwable) {

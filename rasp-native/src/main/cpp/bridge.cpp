@@ -407,10 +407,12 @@ bool scan_verdict() {
 std::atomic<int> g_kill_mode{-1};  // -1 unconfigured, 0 off, 1 on
 std::atomic<int> g_interval_ms{5000};
 std::atomic<bool> g_armed{false};
+std::atomic<bool> g_risk{false};  // risk latched by the evaluator (signalRisk)
 
 bool watchdog_violation() {
-    return scan_status() || scan_trace() || scan_regions() || scan_root_mounts() ||
-           boot_state_modified() || suspicious_memory() || scan_verdict();
+    return g_risk.load() || scan_status() || scan_trace() || scan_regions() ||
+           scan_root_mounts() || boot_state_modified() || suspicious_memory() ||
+           scan_verdict();
 }
 
 void* watchdog_main(void* /*arg*/) {
@@ -495,8 +497,11 @@ void call_h(JNIEnv* /*env*/, jobject /*thiz*/, jboolean enabled, jboolean kill, 
 }
 
 void call_i(JNIEnv* /*env*/, jobject /*thiz*/, jboolean risk) {
-    if (risk && g_kill_mode.load() > 0) {
-        finish_now();
+    // Only latch: the Kotlin response path performs the termination itself
+    // (removing the task first so the platform does not relaunch the activity).
+    // The watchdog picks the latch up as a last resort if Kotlin never acts.
+    if (risk) {
+        g_risk.store(true);
     }
 }
 

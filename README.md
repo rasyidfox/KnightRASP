@@ -224,7 +224,7 @@ not a detection — while their lists are empty, so they never cause false accus
 |---|---|
 | `Log` | internal log (silent unless `debugLogging`) |
 | `Report` | send to `TelemetrySink` |
-| `Exit` | **silent kill**: native `exit_group` syscall (no stack trace/dialog/ANR) |
+| `Exit` | **silent kill**: native `exit_group` syscall (no stack trace/dialog/ANR). The foreground task is removed first (`finishAndRemoveTask`) and the kill is delayed briefly, so the platform does not relaunch the activity in a loop. |
 | `Degrade` / `Logout` / `BlockSensitiveOps` | invoke the app's `HostActions` |
 | `Custom { ... }` | arbitrary app action, on the main thread |
 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        No preview (starting) window: the launcher stays visible until the first
+        frame is ready, instead of showing a lingering blank/white screen while
+        the SDK evaluates the device. This matters because the app can terminate
+        itself right after start.
+    -->
+    <style name="AppTheme" parent="@android:style/Theme.DeviceDefault.Light">
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+</resources>

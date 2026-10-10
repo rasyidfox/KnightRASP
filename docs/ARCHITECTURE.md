@@ -382,7 +382,7 @@ first to measure false positives, then move to PROTECT.
 | `Degrade` | disable sensitive features (biometrics, large transfers) | executed via `HostActions.degrade` |
 | `Logout` | clear tokens/session, force re-login | executed via `HostActions.logout` |
 | `BlockSensitiveOps` | reject specific operations until review | executed via `HostActions.blockSensitiveOps` |
-| `Exit` | terminate the process via a native `exit_group` syscall | silent: no stack trace, no dialog, no ANR |
+| `Exit` | terminate the process via a native `exit_group` syscall | silent: no stack trace, no dialog, no ANR; the foreground task is removed first (`finishAndRemoveTask` + short delay) so the platform does not relaunch the activity in a loop |
 | `Custom { ... }` | arbitrary host action | runs on the main thread |
 
 All responses can be overridden by the host. The SDK never calls `System.exit`
