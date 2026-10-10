@@ -9,10 +9,10 @@ import io.knightrasp.probe.SettingsProbe
 import io.knightrasp.probe.SystemProbe
 
 /**
- * Fake probe untuk unit test check tanpa device.
+ * Fake probes for unit-testing checks without a device.
  *
- * Semua perilaku default "perangkat bersih": tidak ada file, tidak ada paket terpasang,
- * settings default, build properties netral.
+ * All defaults model a "clean device": no files, no installed packages,
+ * default settings, neutral build properties.
  */
 
 class TestFileProbe : FileProbe {
@@ -93,7 +93,7 @@ class TestSystemProbe : SystemProbe {
     override fun enabledAccessibilityServiceIds(): List<String> = accessibilityServices
 }
 
-/** Fake [NativeProbe]; default semua negatif (perangkat bersih). */
+/** Fake [NativeProbe]; everything defaults to negative (clean device). */
 class TestNativeProbe : NativeProbe {
     override var libraryFileName: String = "libguardcore.so"
     var debuggerDetected = false

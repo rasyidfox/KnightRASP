@@ -9,9 +9,9 @@ import io.knightrasp.model.Evidence
 import io.knightrasp.probe.NativeProbe
 
 /**
- * Deteksi debugger dari layer native: pembacaan `TracerPid` dan `ptrace(PTRACE_TRACEME)`
- * memakai syscall langsung, sehingga tidak bergantung pada `Debug.isDebuggerConnected()`
- * yang mudah di-hook.
+ * Debugger detection from the native layer: reads of `TracerPid` and `ptrace(PTRACE_TRACEME)`
+ * use raw syscalls, so they do not depend on the easily hooked
+ * `Debug.isDebuggerConnected()`.
  */
 class NativeDebuggerCheck(private val native: NativeProbe?) : RaspCheck {
 
@@ -20,9 +20,9 @@ class NativeDebuggerCheck(private val native: NativeProbe?) : RaspCheck {
     override val cost = Cost.LOW
 
     override fun run(ctx: RaspContext): CheckResult {
-        val probe = native ?: return CheckResult.Unknown("native probe tidak tersedia")
+        val probe = native ?: return CheckResult.Unknown("native probe unavailable")
         return if (probe.isDebuggerDetected()) {
-            CheckResult.Detected(listOf(Evidence(id, CONFIDENCE, "tracer terdeteksi dari layer native")))
+            CheckResult.Detected(listOf(Evidence(id, CONFIDENCE, "tracer detected from the native layer")))
         } else {
             CheckResult.Clean
         }

@@ -24,7 +24,7 @@ import io.knightrasp.check.virtualization.ClonerPackagesCheck
 import io.knightrasp.check.virtualization.SuspiciousProcessNameCheck
 import io.knightrasp.probe.Probes
 
-/** Daftar check default beserta urutan registrasinya. */
+/** Default check list along with its registration order. */
 object DefaultChecks {
 
     fun list(probes: Probes): List<RaspCheck> = listOf(

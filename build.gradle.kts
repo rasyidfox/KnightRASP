@@ -4,9 +4,9 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
 }
 
-// Identitas publikasi seluruh modul SDK.
-// Modul library masing-masing punya plugin `maven-publish` + `publishing { singleVariant }`,
-// jalankan `./gradlew publishToMavenLocal` untuk konsumsi lokal.
+// Publication identity for all SDK modules.
+// Each library module has the `maven-publish` plugin + `publishing { singleVariant }`;
+// run `./gradlew publishToMavenLocal` for local consumption.
 subprojects {
     group = "io.knightrasp"
     version = "0.1.0"

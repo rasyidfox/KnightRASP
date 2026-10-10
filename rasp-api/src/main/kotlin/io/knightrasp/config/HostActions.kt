@@ -3,24 +3,24 @@ package io.knightrasp.config
 import io.knightrasp.model.ThreatAssessment
 
 /**
- * Hook aksi tingkat aplikasi yang tidak bisa dilakukan SDK sendirian.
+ * Hooks for app-level actions the SDK cannot perform alone.
  *
- * Implementasi dipanggil di main thread oleh executor response. Pada [Mode.MONITOR]
- * seluruh aksi di sini dilewati sehingga SDK aman dipasang di produksi untuk mengukur
- * false positive terlebih dahulu.
+ * Implementations are called on the main thread by the response executor. In [Mode.MONITOR]
+ * all actions here are skipped, so the SDK is safe to ship to production to measure
+ * false positives first.
  */
 interface HostActions {
-    /** Matikan fitur sensitif untuk sementara (mis. transfer besar, biometrik). */
+    /** Temporarily disables sensitive features (e.g. large transfers, biometrics). */
     fun degrade(assessment: ThreatAssessment) {}
 
-    /** Bersihkan token/session dan paksa pengguna login ulang. */
+    /** Clears tokens/session and forces the user to log in again. */
     fun logout(assessment: ThreatAssessment) {}
 
-    /** Blokir operasi sensitif berikutnya sampai review. */
+    /** Blocks the next sensitive operations until review. */
     fun blockSensitiveOps(assessment: ThreatAssessment) {}
 
     companion object {
-        /** Implementasi kosong untuk aplikasi yang belum menyiapkan aksi lanjutan. */
+        /** Empty implementation for apps that have not prepared follow-up actions yet. */
         @JvmField
         val NONE: HostActions = object : HostActions {}
     }

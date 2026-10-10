@@ -1,33 +1,70 @@
-// Native probe KnightRASP: anti-debug, anti-hook, integritas segmen executable, kill.
+// Native probe for KnightRASP: anti-debug, anti-hook, text integrity, kill.
 //
-// Prinsip:
-// - Operasi baca kritis (/proc/self/status, /proc/self/maps) memakai syscall langsung
-//   pada arm64/arm, sehingga tidak melewati libc yang mudah di-hook.
-// - Baseline integritas diambil pada pemanggilan pertama, lalu dibandingkan.
-// - Tidak ada alokasi besar; gagal baca = laporan negatif (fail-open di level check).
+// Hardening notes:
+// - All sensitive strings (paths, markers, JNI class name) are compile-time
+//   XOR-encrypted ("OBF") so they never appear in plaintext in .rodata.
+// - Reads of /proc/self/status and /proc/self/maps use raw syscalls on arm64 so
+//   they do not go through the easily hooked libc wrappers.
+// - The library identifies its own module via dladdr() instead of a file name.
+// - JNI methods are bound with RegisterNatives (JNI_OnLoad); no Java_* symbols
+//   are exported, which makes symbol-based fingerprinting harder.
+// - Fail-open: any failure just yields a negative/unknown result for a check.
 
 #include <jni.h>
 
+#include <dlfcn.h>
 #include <fcntl.h>
 #include <link.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#include <array>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
 
 #if defined(__aarch64__)
-#define FR_ARCH_ARM64 1
+#define KR_ARCH_ARM64 1
 #elif defined(__arm__)
-#define FR_ARCH_ARM 1
+#define KR_ARCH_ARM 1
 #endif
+
+// ---------------------------------------------------------------------------
+// Compile-time string obfuscation
+// ---------------------------------------------------------------------------
+
+template <size_t N, unsigned char Key>
+class XorStr {
+public:
+    explicit constexpr XorStr(const char (&s)[N]) : data_{} {
+        for (size_t i = 0; i < N; ++i) {
+            data_[i] = static_cast<char>(static_cast<unsigned char>(s[i]) ^ Key);
+        }
+    }
+
+    std::string str() const {
+        std::string out;
+        out.reserve(N - 1);
+        for (size_t i = 0; i + 1 < N; ++i) {
+            out.push_back(static_cast<char>(static_cast<unsigned char>(data_[i]) ^ Key));
+        }
+        return out;
+    }
+
+private:
+    char data_[N];
+};
+
+// Key varies per literal (derived from its size) to avoid a single constant
+// pattern across the binary.
+#define OBF(s) \
+    (XorStr<sizeof(s), static_cast<unsigned char>(sizeof(s) * 31 + 17)>(s).str())
 
 namespace {
 
 long raw_syscall6(long number, long a1, long a2, long a3, long a4, long a5, long a6) {
-#if defined(FR_ARCH_ARM64)
+#if defined(KR_ARCH_ARM64)
     register long x8 __asm__("x8") = number;
     register long x0 __asm__("x0") = a1;
     register long x1 __asm__("x1") = a2;
@@ -40,9 +77,9 @@ long raw_syscall6(long number, long a1, long a2, long a3, long a4, long a5, long
                      : "r"(x8), "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x5)
                      : "memory", "cc");
     return x0;
-#elif defined(FR_ARCH_ARM)
-    // Mode Thumb (default NDK) mereservasi r7 sebagai frame pointer sehingga syscall
-    // langsung via r7 tidak diizinkan clang; fallback ke wrapper libc untuk armeabi-v7a.
+#elif defined(KR_ARCH_ARM)
+    // Thumb mode reserves r7 as the frame pointer, so a raw r7 syscall is not
+    // possible; fall back to the libc wrapper on 32-bit ARM.
     return syscall(number, a1, a2, a3, a4, a5, a6);
 #else
     return syscall(number, a1, a2, a3, a4, a5, a6);
@@ -106,10 +143,10 @@ bool contains_case_insensitive(const std::string& haystack, const char* needle) 
 
 bool tracer_pid_detected() {
     std::string status;
-    if (!read_file("/proc/self/status", status, 64 * 1024)) {
+    if (!read_file(OBF("/proc/self/status").c_str(), status, 64 * 1024)) {
         return false;
     }
-    const size_t pos = status.find("TracerPid:");
+    const size_t pos = status.find(OBF("TracerPid:"));
     if (pos == std::string::npos) {
         return false;
     }
@@ -119,7 +156,7 @@ bool tracer_pid_detected() {
 
 bool ptrace_self_detected() {
 #if defined(SYS_ptrace)
-    // PTRACE_TRACEME = 0. Hanya boleh dipanggil sekali: panggilan kedua selalu EPERM.
+    // PTRACE_TRACEME = 0. Call it only once: the second call always returns EPERM.
     static const bool detected = [] {
         return raw_syscall6(SYS_ptrace, 0, 0, 0, 0, 0, 0) < 0;
     }();
@@ -131,18 +168,18 @@ bool ptrace_self_detected() {
 
 bool hook_artifacts_detected() {
     std::string maps;
-    if (!read_file("/proc/self/maps", maps, 8 * 1024 * 1024)) {
+    if (!read_file(OBF("/proc/self/maps").c_str(), maps, 8 * 1024 * 1024)) {
         return false;
     }
-    static const char* const kMarkers[] = {
-        "frida",
-        "xposed",
-        "substrate",
-        "lsposed",
-        "libgum",
+    static const std::array<std::string, 5> kMarkers = {
+        OBF("frida"),
+        OBF("xposed"),
+        OBF("substrate"),
+        OBF("lsposed"),
+        OBF("libgum"),
     };
-    for (const char* marker : kMarkers) {
-        if (contains_case_insensitive(maps, marker)) {
+    for (const auto& marker : kMarkers) {
+        if (contains_case_insensitive(maps, marker.c_str())) {
             return true;
         }
     }
@@ -150,16 +187,16 @@ bool hook_artifacts_detected() {
 }
 
 struct TextSegment {
+    uintptr_t base = 0;
     uintptr_t address = 0;
     size_t size = 0;
 };
 
 int find_text_segment(struct dl_phdr_info* info, size_t /*size*/, void* data) {
-    if (info->dlpi_name == nullptr ||
-        std::strstr(info->dlpi_name, NATIVE_LIB_FILE_NAME) == nullptr) {
+    auto* segment = static_cast<TextSegment*>(data);
+    if (static_cast<uintptr_t>(info->dlpi_addr) != segment->base) {
         return 0;
     }
-    auto* segment = static_cast<TextSegment*>(data);
     for (int i = 0; i < info->dlpi_phnum; ++i) {
         const ElfW(Phdr)& phdr = info->dlpi_phdr[i];
         if (phdr.p_type != PT_LOAD || (phdr.p_flags & PF_X) == 0) {
@@ -172,8 +209,20 @@ int find_text_segment(struct dl_phdr_info* info, size_t /*size*/, void* data) {
     return 0;
 }
 
-uint64_t hash_text_segment() {
+uintptr_t own_module_base() {
+    Dl_info info{};
+    if (dladdr(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(&find_text_segment)), &info) == 0) {
+        return 0;
+    }
+    return reinterpret_cast<uintptr_t>(info.dli_fbase);
+}
+
+uint64_t hash_exec_segment() {
     TextSegment segment;
+    segment.base = own_module_base();
+    if (segment.base == 0) {
+        return 0;
+    }
     if (dl_iterate_phdr(find_text_segment, &segment) == 0 || segment.size == 0) {
         return 0;
     }
@@ -188,7 +237,7 @@ uint64_t hash_text_segment() {
 
 bool text_modified() {
     static uint64_t baseline = 0;
-    const uint64_t current = hash_text_segment();
+    const uint64_t current = hash_exec_segment();
     if (current == 0) {
         return false;
     }
@@ -206,28 +255,51 @@ bool text_modified() {
     _exit(0);
 }
 
-}  // namespace
+// ---------------------------------------------------------------------------
+// JNI bindings (registered, not exported by name)
+// ---------------------------------------------------------------------------
 
-extern "C" {
-
-JNIEXPORT jboolean JNICALL
-Java_io_knightrasp_nativebridge_NativeProbeImpl_nativeAntiDebug(JNIEnv* /*env*/, jobject /*thiz*/) {
+jboolean anti_debug_jni(JNIEnv* /*env*/, jobject /*thiz*/) {
     return (tracer_pid_detected() || ptrace_self_detected()) ? JNI_TRUE : JNI_FALSE;
 }
 
-JNIEXPORT jboolean JNICALL
-Java_io_knightrasp_nativebridge_NativeProbeImpl_nativeAntiHook(JNIEnv* /*env*/, jobject /*thiz*/) {
+jboolean anti_hook_jni(JNIEnv* /*env*/, jobject /*thiz*/) {
     return hook_artifacts_detected() ? JNI_TRUE : JNI_FALSE;
 }
 
-JNIEXPORT jboolean JNICALL
-Java_io_knightrasp_nativebridge_NativeProbeImpl_nativeTextIntegrity(JNIEnv* /*env*/, jobject /*thiz*/) {
+jboolean text_integrity_jni(JNIEnv* /*env*/, jobject /*thiz*/) {
     return text_modified() ? JNI_TRUE : JNI_FALSE;
 }
 
-JNIEXPORT void JNICALL
-Java_io_knightrasp_nativebridge_NativeProbeImpl_nativeKillProcess(JNIEnv* /*env*/, jobject /*thiz*/) {
+void kill_process_jni(JNIEnv* /*env*/, jobject /*thiz*/) {
     kill_process_now();
 }
 
-}  // extern "C"
+const JNINativeMethod kNativeMethods[] = {
+    {const_cast<char*>("nativeAntiDebug"), const_cast<char*>("()Z"),
+     reinterpret_cast<void*>(&anti_debug_jni)},
+    {const_cast<char*>("nativeAntiHook"), const_cast<char*>("()Z"),
+     reinterpret_cast<void*>(&anti_hook_jni)},
+    {const_cast<char*>("nativeTextIntegrity"), const_cast<char*>("()Z"),
+     reinterpret_cast<void*>(&text_integrity_jni)},
+    {const_cast<char*>("nativeKillProcess"), const_cast<char*>("()V"),
+     reinterpret_cast<void*>(&kill_process_jni)},
+};
+
+}  // namespace
+
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
+    JNIEnv* env = nullptr;
+    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK || env == nullptr) {
+        return JNI_ERR;
+    }
+    jclass clazz = env->FindClass(OBF("io/knightrasp/nativebridge/NativeProbeImpl").c_str());
+    if (clazz == nullptr) {
+        return JNI_ERR;
+    }
+    const jint count = static_cast<jint>(sizeof(kNativeMethods) / sizeof(kNativeMethods[0]));
+    if (env->RegisterNatives(clazz, kNativeMethods, count) != JNI_OK) {
+        return JNI_ERR;
+    }
+    return JNI_VERSION_1_6;
+}

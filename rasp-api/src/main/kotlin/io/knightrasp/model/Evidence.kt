@@ -1,11 +1,11 @@
 package io.knightrasp.model
 
 /**
- * Satu sinyal terdeteksi dari sebuah check.
+ * A single signal detected by a check.
  *
- * @param ruleId id check yang menghasilkan sinyal, mis. `root.su_binary`.
- * @param confidence keyakinan 0..1 bahwa sinyal ini benar.
- * @param detail keterangan tambahan (path, nama paket, dsb.) — jangan berisi PII.
+ * @param ruleId id of the check that produced the signal, e.g. `root.su_binary`.
+ * @param confidence certainty 0..1 that this signal is genuine.
+ * @param detail additional information (path, package name, etc.) — must not contain PII.
  */
 data class Evidence(
     val ruleId: String,

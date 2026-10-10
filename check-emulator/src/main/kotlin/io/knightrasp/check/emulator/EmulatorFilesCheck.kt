@@ -7,8 +7,9 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.FileProbe
+import io.knightrasp.util.ObfuscatedStrings
 
-/** File device khas emulator QEMU/Genymotion. */
+/** Typical QEMU/Genymotion emulator device files. */
 class EmulatorFilesCheck(private val files: FileProbe) : RaspCheck {
 
     override val id = "emulator.files"
@@ -27,13 +28,12 @@ class EmulatorFilesCheck(private val files: FileProbe) : RaspCheck {
     companion object {
         const val CONFIDENCE = 0.5f
 
-        val EMULATOR_PATHS = listOf(
-            "/dev/socket/qemud",
-            "/dev/qemu_pipe",
-            "/dev/socket/genyd",
-            "/dev/socket/baseband_genyd",
-            "/sys/qemu_trace",
-            "/system/bin/qemud",
+        /** Obfuscated emulator device paths. */
+        val EMULATOR_PATHS: List<String> = ObfuscatedStrings.decodeList(
+            "145f5e4d14485458505e4f144a5e564e5f31145f5e4d144a5e564e644b524b5e31145f5e4d14485458505e4f14" +
+                "5c5e55425f31145f5e4d14485458505e4f14595a485e595a555f645c5e55425f3114484248144a5e564e644f" +
+                "495a585e31144842484f5e5614595255144a5e564e5f",
+            0x3B,
         )
     }
 }

@@ -7,9 +7,9 @@ import java.net.URL
 import org.json.JSONObject
 
 /**
- * Memuat rules dari envelope, file, atau URL; selalu memverifikasi tanda tangan dan
- * masa berlaku. Kegagalan apa pun menghasilkan `null` (fail-open: pakai rules lokal /
- * config statis).
+ * Loads rules from an envelope, file, or URL; always verifies the signature and
+ * validity period. Any failure yields `null` (fail-open: use local rules /
+ * static config).
  */
 class SignedRulesLoader(private val verifier: RuleEnvelopeVerifier) {
 

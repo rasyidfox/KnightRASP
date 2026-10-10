@@ -1,19 +1,19 @@
 package io.knightrasp.config
 
 /**
- * Tuning yang berasal dari remote rules (sudah diverifikasi tanda tangannya oleh modul
- * `rasp-rules`). Rules bersifat data-only: tidak ada kode/ekspresi bebas yang dieksekusi.
+ * Tuning coming from remote rules (their signature has been verified by the
+ * `rasp-rules` module). Rules are data-only: no free-form code/expressions are executed.
  *
- * Bila rules kedaluwarsa, runtime mengabaikannya dan kembali ke [RaspConfig] statis.
+ * When rules are expired, the runtime ignores them and falls back to the static [RaspConfig].
  *
- * @param version versi rules; naikkan monoton saat menerbitkan update.
- * @param issuedAtMs waktu terbit (epoch ms) untuk audit.
- * @param expiresAtMs batas berlaku; null berarti tanpa kedaluwarsa.
- * @param disabledChecks check yang dimatikan di sisi klien (menang atas enabledChecks).
- * @param confidenceScale pengali confidence per `checkId`, mis. `0.5` untuk menurunkan
- *   keyakinan check yang sering false positive di lapangan; `0.0` efektif mematikan.
- * @param thresholds override ambang level; null berarti memakai ambang config.
- * @param signatureVerified true bila rules ini lolos verifikasi tanda tangan.
+ * @param version rules version; increase monotonically when publishing an update.
+ * @param issuedAtMs issue time (epoch ms) for auditing.
+ * @param expiresAtMs validity limit; null means no expiry.
+ * @param disabledChecks checks disabled on the client side (takes precedence over enabledChecks).
+ * @param confidenceScale confidence multiplier per `checkId`, e.g. `0.5` to lower
+ *   the confidence of checks that often false-positive in the field; `0.0` effectively disables.
+ * @param thresholds level threshold override; null means use the config thresholds.
+ * @param signatureVerified true when these rules passed signature verification.
  */
 data class RaspRules(
     val version: Int,

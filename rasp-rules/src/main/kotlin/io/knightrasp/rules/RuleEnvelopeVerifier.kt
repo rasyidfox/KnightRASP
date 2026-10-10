@@ -6,10 +6,10 @@ import java.security.Signature
 import java.security.spec.X509EncodedKeySpec
 
 /**
- * Memverifikasi envelope rules: `payload` (JSON string) ditandatangani ECDSA P-256.
+ * Verifies rules envelopes: the `payload` (JSON string) is signed with ECDSA P-256.
  *
- * Envelope tidak berisi kode; payload di-parse sebagai data oleh [RuleCodec]. Jadi
- * kompromi server tidak berubah menjadi remote code execution di perangkat.
+ * The envelope carries no code; the payload is parsed as data by [RuleCodec]. So
+ * a server compromise does not turn into remote code execution on the device.
  */
 class RuleEnvelopeVerifier(publicKeyDerBase64: String) {
 

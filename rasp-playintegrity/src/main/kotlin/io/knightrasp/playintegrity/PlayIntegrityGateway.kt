@@ -6,20 +6,20 @@ import com.google.android.play.core.integrity.IntegrityManagerFactory
 import com.google.android.play.core.integrity.IntegrityTokenRequest
 
 /**
- * Klien Play Integrity (opsional).
+ * Play Integrity client (optional).
  *
- * Verdict Play Integrity **hanya dapat diverifikasi di server**, jadi gateway ini hanya
- * mengambil token; aplikasi host wajib mengirim token tersebut ke backend-nya yang
- * lalu memanggil Google Play Integrity API untuk decrypt + verifikasi. Jangan
- * mempercayai keputusan apa pun di sisi klien.
+ * A Play Integrity verdict **can only be verified on the server**, so this gateway only
+ * obtains the token; the host app must send that token to its backend, which
+ * then calls the Google Play Integrity API to decrypt + verify. Do not
+ * trust any verdict on the client side.
  *
- * Syarat operasional:
- * - Aplikasi terdistribusi lewat Google Play, dan nomor Google Cloud project sudah
- *   terhubung ke aplikasi di Play Console.
- * - Gunakan `nonce` acak per permintaan (server yang membuat dan memverifikasi) untuk
- *   mencegah replay.
+ * Operational requirements:
+ * - The app is distributed through Google Play, and the Google Cloud project number is
+ *   linked to the app in the Play Console.
+ * - Use a random `nonce` per request (created and verified by the server) to
+ *   prevent replay.
  *
- * Contoh alur:
+ * Example flow:
  * ```
  * val gateway = PlayIntegrityGateway(context, cloudProjectNumber = 123456789012L)
  * gateway.requestToken(nonce = serverNonce) { token, error ->
@@ -34,8 +34,8 @@ class PlayIntegrityGateway(
     private val manager: IntegrityManager = IntegrityManagerFactory.create(context.applicationContext)
 
     /**
-     * Meminta integrity token. Callback dipanggil di main thread (mengikuti perilaku
-     * task Play Core).
+     * Requests an integrity token. The callback is invoked on the main thread (following
+     * Play Core task behavior).
      */
     fun requestToken(nonce: String? = null, callback: TokenCallback) {
         val builder = IntegrityTokenRequest.builder()
@@ -47,7 +47,7 @@ class PlayIntegrityGateway(
             .addOnFailureListener { error -> callback.onResult(null, error) }
     }
 
-    /** Callback Java-friendly: tepat salah satu dari [token]/[error] berisi nilai. */
+    /** Java-friendly callback: exactly one of [token]/[error] holds a value. */
     fun interface TokenCallback {
         fun onResult(token: String?, error: Throwable?)
     }

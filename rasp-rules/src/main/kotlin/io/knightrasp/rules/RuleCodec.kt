@@ -4,12 +4,12 @@ import io.knightrasp.config.RaspRules
 import io.knightrasp.config.Thresholds
 import org.json.JSONObject
 
-/** Parser/encoder data-only untuk isi `payload` rules. */
+/** Data-only parser/encoder for the rules `payload` contents. */
 object RuleCodec {
 
     fun parse(payloadJson: String): RaspRules {
         val root = JSONObject(payloadJson)
-        require(root.has("version")) { "Rules tidak memiliki version" }
+        require(root.has("version")) { "Rules are missing version" }
 
         return RaspRules(
             version = root.getInt("version"),

@@ -1,4 +1,4 @@
 package io.knightrasp.model
 
-/** Pemicu scan. */
+/** Scan trigger. */
 enum class Trigger { ON_INIT, ON_FOREGROUND, ON_DEMAND, PERIODIC }

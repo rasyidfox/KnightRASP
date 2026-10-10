@@ -11,16 +11,16 @@ import io.knightrasp.probe.PackageProbe
 import io.knightrasp.probe.ProcProbe
 
 /**
- * Anti-tamper SDK: memastikan library native SDK (nama file dari
- * [io.knightrasp.probe.NativeProbe.libraryFileName]) yang dimuat berasal dari **direktori
- * instalasi APK** aplikasi (bukan path lain seperti `/data/local/tmp`) — pola umum saat
- * library native diganti versi yang sudah di-patch.
+ * SDK anti-tamper: ensures the SDK native library (file name from
+ * [io.knightrasp.probe.NativeProbe.libraryFileName]) is loaded from the **APK
+ * installation directory** of the app (not another path such as `/data/local/tmp`) — a common
+ * pattern when a native library is replaced with a patched version.
  *
- * Menggunakan prefiks direktori instalasi (bukan path APK persis) agar tetap benar untuk
- * aplikasi yang dipasang dari Play dengan split APK per-ABI (`split_config.*.apk`).
+ * Uses the installation directory prefix (not the exact APK path) so it stays correct for
+ * apps installed from Play with per-ABI split APKs (`split_config.*.apk`).
  *
- * Melengkapi `integrity.native_text` (deteksi patch setelah load) dan
- * `integrity.signature` (deteksi repackaging APK).
+ * Complements `integrity.native_text` (patch detection after load) and
+ * `integrity.signature` (APK repackaging detection).
  */
 class SdkLibraryOriginCheck(
     private val proc: ProcProbe,
@@ -34,25 +34,25 @@ class SdkLibraryOriginCheck(
 
     override fun run(ctx: RaspContext): CheckResult {
         if (native == null) {
-            return CheckResult.Unknown("native probe tidak tersedia")
+            return CheckResult.Unknown("native probe unavailable")
         }
         val apkPath = packages.apkPath(ctx.packageName)
-            ?: return CheckResult.Unknown("path APK tidak terbaca")
+            ?: return CheckResult.Unknown("APK path unreadable")
         val maps = proc.selfMaps()
-            ?: return CheckResult.Unknown("tidak bisa membaca /proc/self/maps")
+            ?: return CheckResult.Unknown("maps unreadable")
 
         val libraryName = native.libraryFileName
         val installDir = apkPath.substringBeforeLast('/', missingDelimiterValue = apkPath)
         if (libraryName !in maps) {
-            return CheckResult.Unknown("$libraryName tidak ditemukan di maps")
+            return CheckResult.Unknown("$libraryName not found in maps")
         }
 
-        // Pencarian substring langsung (tanpa memecah maps menjadi baris).
+        // Direct substring search (without splitting maps into lines).
         return if (installDir in maps) {
             CheckResult.Clean
         } else {
             CheckResult.Detected(
-                listOf(Evidence(id, CONFIDENCE, "library native dimuat dari luar direktori aplikasi"))
+                listOf(Evidence(id, CONFIDENCE, "native library loaded from outside the app directory"))
             )
         }
     }

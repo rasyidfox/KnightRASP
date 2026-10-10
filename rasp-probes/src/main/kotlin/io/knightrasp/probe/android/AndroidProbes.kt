@@ -10,10 +10,10 @@ import io.knightrasp.probe.SettingsProbe
 import io.knightrasp.probe.SystemProbe
 
 /**
- * Rangkaian probe produksi. Semua probe bersifat stateless dan aman dipakai lintas thread.
+ * Production probe set. All probes are stateless and safe to use across threads.
  *
- * @param native probe native dari modul `rasp-native`; null bila library native tidak
- *   disertakan (varian tanpa NDK) — check yang bergantung padanya akan melaporkan Unknown.
+ * @param native native probe from the `rasp-native` module; null when the native library
+ *   is not included (NDK-less variant) — checks that depend on it report Unknown.
  */
 class AndroidProbes(
     context: Context,

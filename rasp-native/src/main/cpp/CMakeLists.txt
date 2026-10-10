@@ -1,18 +1,14 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(knightrasp_native CXX)
 
-# Nama output library dapat dikonfigurasi dari Gradle (rasp.nativeLibName) agar tidak
-# memuat kata "rasp". Nilai harus sama dengan yang dipakai System.loadLibrary di Kotlin.
+# The output library name is configurable from Gradle (knightrasp.nativeLibName)
+# so it does not contain "rasp". The value must match System.loadLibrary() in
+# Kotlin (which receives it obfuscated through BuildConfig).
 if(NOT DEFINED NATIVE_LIB_NAME)
     set(NATIVE_LIB_NAME "guardcore")
 endif()
 
 add_library(${NATIVE_LIB_NAME} SHARED knightrasp.cpp)
-
-target_compile_definitions(
-    ${NATIVE_LIB_NAME}
-    PRIVATE NATIVE_LIB_FILE_NAME="lib${NATIVE_LIB_NAME}.so"
-)
 
 target_compile_features(${NATIVE_LIB_NAME} PRIVATE cxx_std_17)
 
@@ -27,4 +23,15 @@ target_compile_options(
     -Wextra
 )
 
-target_link_libraries(${NATIVE_LIB_NAME} PRIVATE log)
+# Hardening: full RELRO + immediate binding, non-executable stack, hide symbols
+# from linked static libraries.
+target_link_options(
+    ${NATIVE_LIB_NAME}
+    PRIVATE
+    -Wl,-z,relro
+    -Wl,-z,now
+    -Wl,-z,noexecstack
+    -Wl,--exclude-libs,ALL
+)
+
+target_link_libraries(${NATIVE_LIB_NAME} PRIVATE log dl)

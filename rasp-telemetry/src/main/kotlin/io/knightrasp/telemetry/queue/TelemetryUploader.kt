@@ -1,10 +1,10 @@
 package io.knightrasp.telemetry.queue
 
-/** Tujuan pengiriman batch telemetry; biasanya backend aplikasi host. */
+/** Destination for telemetry batch uploads; usually the host app's backend. */
 fun interface TelemetryUploader {
     /**
-     * Kirim satu batch. Kembalikan `true` bila batch diterima (boleh dihapus dari
-     * antrean); `false` atau exception berarti akan dicoba ulang dengan backoff.
+     * Uploads one batch. Returns `true` when the batch is accepted (it may be removed from
+     * the queue); `false` or an exception means it will be retried with backoff.
      */
     fun upload(events: List<TelemetryEvent>): Boolean
 }

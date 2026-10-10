@@ -1,7 +1,7 @@
-# Consumer rules untuk API publik KnightRASP.
-# Nama publik harus stabil agar aplikasi konsumen tetap dapat memanggilnya
-# setelah R8. Kelas internal (default runtime, checks, probes) tidak wajib
-# di-keep karena direferensikan langsung, bukan lewat reflection.
+# Consumer rules for the KnightRASP public API.
+# Public names must stay stable so consumer apps can keep calling them
+# after R8. Internal classes (default runtime, checks, probes) do not need
+# to be kept because they are referenced directly, not via reflection.
 
 -keep public class io.knightrasp.Rasp { public *; }
 -keep public interface io.knightrasp.RaspListener { *; }

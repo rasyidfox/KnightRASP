@@ -7,8 +7,9 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.SettingsProbe
+import io.knightrasp.util.ObfuscatedStrings
 
-/** Developer options aktif. Sinyal lemah; biasanya hanya relevan bila digabung sinyal lain. */
+/** Developer options enabled. Weak signal; usually relevant only when combined with other signals. */
 class DeveloperOptionsCheck(private val settings: SettingsProbe) : RaspCheck {
 
     override val id = "env.developer_options"
@@ -25,7 +26,11 @@ class DeveloperOptionsCheck(private val settings: SettingsProbe) : RaspCheck {
 
     companion object {
         const val CONFIDENCE = 0.3f
-        const val KEY_DEVELOPMENT_SETTINGS_ENABLED = "development_settings_enabled"
+
+        /** Obfuscated Settings.Global key. */
+        val KEY_DEVELOPMENT_SETTINGS_ENABLED: String =
+            ObfuscatedStrings.decode("41405340494a5548404b517a564051514c4b42567a404b4447494041", 0x25)
+
         private const val ENABLED = 1
         private const val DEFAULT = 0
     }

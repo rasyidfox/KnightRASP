@@ -8,7 +8,7 @@ import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.SystemProbe
 
-/** Debugger terhubung (JDWP). Keyakinan tinggi: hampir selalu berarti instrumentasi aktif. */
+/** Debugger connected (JDWP). High confidence: it almost always means instrumentation is active. */
 class DebuggerFlagCheck(private val system: SystemProbe) : RaspCheck {
 
     override val id = "debug.debugger_connected"

@@ -106,7 +106,7 @@ class ScanEngineTest {
 
     @Test
     fun unknown_results_are_not_cached() = runBlocking {
-        val check = CountingCheck("unknown", result = CheckResult.Unknown("probe gagal"))
+        val check = CountingCheck("unknown", result = CheckResult.Unknown("probe failed"))
         val engine = engineWith(check)
 
         engine.scan(testContext())
@@ -151,6 +151,6 @@ class ScanEngineTest {
 
         assertEquals(listOf("slow"), failures)
         assertEquals(0, result.evidence.size)
-        assertTrue("scan tidak boleh menunggu straggler, elapsed=${elapsed}ms", elapsed < 1_200L)
+        assertTrue("scan must not wait for stragglers, elapsed=${elapsed}ms", elapsed < 1_200L)
     }
 }

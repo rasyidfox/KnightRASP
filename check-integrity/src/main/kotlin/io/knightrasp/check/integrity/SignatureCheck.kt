@@ -9,13 +9,13 @@ import io.knightrasp.model.Evidence
 import io.knightrasp.probe.PackageProbe
 
 /**
- * Membandingkan SHA-256 sertifikat penandatangan APK yang berjalan dengan daftar yang
- * diharapkan dari [RaspContext.config]. Aplikasi yang di-repack dengan kunci lain akan
- * terdeteksi.
+ * Compares the SHA-256 of the running APK signing certificate against the list
+ * expected from [RaspContext.config]. An app repacked with another key will be
+ * detected.
  *
- * Bila `expectedSignatureSha256` kosong, check melaporkan Unknown (tidak memverifikasi).
- * Untuk aplikasi dengan Play App Signing, gunakan sertifikat penandatanganan Play
- * (bukan upload key) dan sertakan juga sertifikat lama bila rotasi kunci aktif.
+ * When `expectedSignatureSha256` is empty, the check reports Unknown (no verification).
+ * For apps with Play App Signing, use the Play signing certificate
+ * (not the upload key) and also include the old certificate if key rotation is active.
  */
 class SignatureCheck(private val packages: PackageProbe) : RaspCheck {
 
@@ -29,19 +29,19 @@ class SignatureCheck(private val packages: PackageProbe) : RaspCheck {
             .filter { it.isNotEmpty() }
             .toSet()
         if (expected.isEmpty()) {
-            return CheckResult.Unknown("expectedSignatureSha256 belum dikonfigurasi")
+            return CheckResult.Unknown("expectedSignatureSha256 not configured")
         }
 
         val actual = packages.signingCertSha256(ctx.packageName).map { it.lowercase() }
         if (actual.isEmpty()) {
-            return CheckResult.Unknown("sertifikat penandatangan tidak terbaca")
+            return CheckResult.Unknown("signing certificate unreadable")
         }
 
         return if (actual.any { it in expected }) {
             CheckResult.Clean
         } else {
             CheckResult.Detected(
-                listOf(Evidence(id, CONFIDENCE, "signature APK tidak cocok dengan yang diharapkan"))
+                listOf(Evidence(id, CONFIDENCE, "APK signature does not match the expected value"))
             )
         }
     }

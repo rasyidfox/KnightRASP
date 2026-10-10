@@ -422,6 +422,31 @@ signal correlation.
 - Never ship secrets/API keys inside the app — including inside this SDK.
 - The engine is **fail-open**: internal errors never take the host app down.
 
+### Hardening & anti-reverse-engineering
+
+What is already in place:
+
+| Layer | Measure |
+|---|---|
+| Kotlin/Java | Release builds contain **no logging code and no log strings** — the release logger is a compile-time no-op and every call site is gated by `const ENABLED = false`, so R8 removes them. |
+| Kotlin/Java | Detection-sensitive constants (root paths, Magisk packages, hook markers, `/proc` paths, settings keys, cloner packages) are stored as **XOR+hex blobs** and decoded at runtime (`ObfuscatedStrings`); no plaintext markers remain in the dex. |
+| Kotlin/Java | The native library name is decoded at runtime from an obfuscated `BuildConfig` value. |
+| Native | Sensitive C++ strings (paths, markers, JNI class name) are **compile-time XOR-encrypted** and never appear in `.rodata`. |
+| Native | JNI methods are bound with **`RegisterNatives`** in `JNI_OnLoad` — no `Java_*` symbols are exported (only `JNI_OnLoad`), so symbol-based fingerprinting and hook targeting get harder. |
+| Native | The library identifies its own module via **`dladdr()`**, so no file-name string is needed internally. |
+| Native | Linker hardening: **full RELRO + `-z now`**, non-executable stack, `--exclude-libs,ALL`, hidden visibility; debug symbols are stripped by AGP in release. |
+| Native | Raw syscalls on arm64 for the integrity-critical reads (`/proc/self/status`, `/proc/self/maps`). |
+
+Honest limitations:
+
+- There is **no packer** (encrypted-dex/loader). Debug builds and DWARF sections still
+  contain plaintext and source paths — only release artifacts are hardened.
+- `<queries>` entries in the manifest necessarily list the package names of known root
+  managers/cloners (required by the platform's package-visibility rules).
+- Obfuscation prevents casual static analysis, not a determined attacker. Remember:
+  **client-side checks are advisory** — back every serious decision with server-side
+  verification.
+
 ---
 
 ## Privacy

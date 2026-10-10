@@ -4,7 +4,7 @@ import io.knightrasp.check.RaspCheck
 import io.knightrasp.config.RaspConfig
 import io.knightrasp.config.RaspRules
 
-/** Registry check dengan filter enable/disable dari [RaspConfig] dan remote rules. */
+/** Check registry with enable/disable filtering from [RaspConfig] and remote rules. */
 class CheckRegistry(private val all: List<RaspCheck>) {
 
     fun activeFor(config: RaspConfig, rules: RaspRules? = null): List<RaspCheck> {

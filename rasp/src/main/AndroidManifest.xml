@@ -4,8 +4,8 @@
     <application>
 
         <!--
-            Menyambungkan runtime default (probes + seluruh check) ke facade Rasp
-            sebelum Application.onCreate berjalan, sehingga aplikasi cukup memanggil
+            Attaches the default runtime (probes + all checks) to the Rasp facade
+            before Application.onCreate runs, so the app only needs to call
             Rasp.init(this, config).
         -->
         <provider

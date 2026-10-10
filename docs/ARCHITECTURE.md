@@ -514,20 +514,32 @@ false-positive characteristics:
 
 ## 17. Securing the SDK itself
 
-1. **Obfuscation.** R8 full mode; `-keep` only the public API; consumer rules ship in
-   the AAR so consumers need no configuration.
-2. **No secrets.** No API keys or secret algorithms inside the SDK; assume attackers
+1. **No logging in release.** The release variant of the internal logger is a no-op and
+   all call sites are gated by a compile-time `false`, so R8 removes the logging code
+   and its strings entirely (verified against the release dex).
+2. **String obfuscation (Java/Kotlin).** Detection-sensitive constants (root paths,
+   hook markers, `/proc` paths, settings keys, package lists) are stored as XOR+hex
+   blobs and decoded at runtime; the native library name is obfuscated the same way.
+3. **Native string encryption.** C++ paths/markers and the JNI class name are
+   compile-time XOR-encrypted (`XorStr`) and never appear in `.rodata`.
+4. **JNI surface reduction.** Methods are bound through `RegisterNatives` in
+   `JNI_OnLoad`; no `Java_*` symbols are exported, and the library locates itself via
+   `dladdr()` instead of a file-name string.
+5. **Binary hardening.** Full RELRO + immediate binding, non-executable stack,
+   hidden visibility, `--exclude-libs,ALL`, debug symbols stripped in release, raw
+   syscalls for integrity-critical reads on arm64.
+6. **SDK anti-tamper checks.** `integrity.native_text` (executable-segment baseline)
+   and `integrity.sdk_library_origin` (the native library must load from the app's
+   install directory, not `/data/local/tmp`).
+7. **Consumer ProGuard rules** ship inside the AAR so consumers need no extra
+   configuration and only the public API (plus the JNI boundary) is kept.
+8. **No secrets.** No API keys or secret algorithms inside the SDK; assume attackers
    read everything.
-3. **No logging in release.** The release variant of the internal logger is a no-op
-   and all call sites are gated by a compile-time `false`, so R8 removes the logging
-   code and its strings entirely (verified against the release dex).
-4. **SDK anti-tamper.** `integrity.native_text` (executable-segment baseline) and
-   `integrity.sdk_library_origin` (the native library must load from the app's install
-   directory, not `/data/local/tmp`).
-5. **Open-source readiness.** Because the detections are transparent, strength must
+9. **Open-source readiness.** Because the detections are transparent, strength must
    come from tuning, obfuscation, and server-side verification.
-6. **Play Integrity** as an optional module to prove the genuine app runs on a genuine
-   device, especially at critical points.
+10. **Not implemented (future):** a packer/encrypted-dex loader and OLLVM
+    control-flow flattening. These raise the bar further but are not a substitute for
+    server-side decisions.
 
 ---
 

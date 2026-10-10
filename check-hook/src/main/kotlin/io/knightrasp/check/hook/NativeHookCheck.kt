@@ -9,8 +9,8 @@ import io.knightrasp.model.Evidence
 import io.knightrasp.probe.NativeProbe
 
 /**
- * Pemindaian artefak hook dari layer native (pembacaan /proc/self/maps memakai syscall
- * langsung, lebih sulit di-hook daripada pembacaan lewat Java).
+ * Hook-artifact scanning from the native layer (reads /proc/self/maps via raw
+ * syscalls, harder to hook than Java-side reads).
  */
 class NativeHookCheck(private val native: NativeProbe?) : RaspCheck {
 
@@ -19,9 +19,9 @@ class NativeHookCheck(private val native: NativeProbe?) : RaspCheck {
     override val cost = Cost.LOW
 
     override fun run(ctx: RaspContext): CheckResult {
-        val probe = native ?: return CheckResult.Unknown("native probe tidak tersedia")
+        val probe = native ?: return CheckResult.Unknown("native probe unavailable")
         return if (probe.isHooked()) {
-            CheckResult.Detected(listOf(Evidence(id, CONFIDENCE, "artefak hook terlihat oleh native probe")))
+            CheckResult.Detected(listOf(Evidence(id, CONFIDENCE, "hook artifacts visible to the native probe")))
         } else {
             CheckResult.Clean
         }

@@ -2,7 +2,7 @@ package io.knightrasp.telemetry.queue
 
 import java.io.File
 
-/** Penyimpanan baris JSON telemetry. Implementasi harus aman dipanggil lintas thread. */
+/** Telemetry JSON-line storage. Implementations must be safe to call across threads. */
 interface TelemetryStore {
     fun load(): List<String>
 
@@ -10,8 +10,8 @@ interface TelemetryStore {
 }
 
 /**
- * Store berbasis file (JSON Lines). Menulis lewat file sementara lalu rename, dan
- * menelan error I/O (fail-open: telemetry tidak boleh mengganggu aplikasi).
+ * File-based store (JSON Lines). Writes through a temporary file then renames, and
+ * swallows I/O errors (fail-open: telemetry must not disturb the app).
  */
 class FileTelemetryStore(private val file: File) : TelemetryStore {
 

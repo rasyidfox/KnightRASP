@@ -1,7 +1,7 @@
-# Consumer rules modul agregat `rasp`.
+# Consumer rules for the `rasp` aggregate module.
 
-# ContentProvider diinstansiasi framework lewat nama kelas dari manifest.
+# The framework instantiates the ContentProvider via its class name from the manifest.
 -keep class io.knightrasp.internal.KnightRASPInitProvider { *; }
 
-# JNI: nama kelas & method native adalah kontrak dengan libknightrasp.so.
+# JNI: native class & method names are a contract with libknightrasp.so.
 -keep class io.knightrasp.nativebridge.NativeProbeImpl { *; }

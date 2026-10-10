@@ -20,8 +20,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Demo end-to-end pipeline RASP di JVM (tanpa device): 21 check asli + engine dua
- * gelombang + scorer noisy-OR + simulasi policy. Probe diganti fake.
+ * End-to-end RASP pipeline demo on the JVM (no device): 21 real checks + the two-
+ * wave engine + noisy-OR scorer + policy simulation. Probes are replaced with fakes.
  */
 class PipelineDemoTest {
 
@@ -47,7 +47,7 @@ class PipelineDemoTest {
     fun clean_device_is_reported_as_none() {
         val assessment = scan(cleanProbes())
 
-        report("Perangkat bersih (probe default)", assessment)
+        report("Clean device (default probes)", assessment)
 
         assertEquals(Level.NONE, assessment.level)
         assertEquals(0, assessment.evidence.size)
@@ -57,10 +57,10 @@ class PipelineDemoTest {
     fun compromised_device_is_reported_as_critical() {
         val assessment = scan(compromisedProbes())
 
-        report("Perangkat terkompromi (root + hook + tamper + cloner)", assessment)
+        report("Compromised device (root + hook + tamper + cloner)", assessment)
 
         assertEquals(Level.CRITICAL, assessment.level)
-        assertTrue("kategori terdeteksi: ${assessment.categories.size}", assessment.categories.size >= 6)
+        assertTrue("categories detected: ${assessment.categories.size}", assessment.categories.size >= 6)
     }
 
     private fun scan(probes: TestProbes): ThreatAssessment = runBlocking {
@@ -129,10 +129,10 @@ class PipelineDemoTest {
 
         println()
         println("=".repeat(78))
-        println("SKENARIO : $title")
-        println("CHECK    : $checkCount check dieksekusi")
+        println("SCENARIO : $title")
+        println("CHECK    : $checkCount checks executed")
         println("LEVEL    : ${assessment.level}  (score ${format(assessment.score)})")
-        println("KATEGORI : $categories")
+        println("CATEGORY : $categories")
         println("EVIDENCE (${assessment.evidence.size}):")
         assessment.evidence.sortedByDescending { it.confidence }.forEach {
             println("   - ${it.ruleId} [${format(it.confidence)}] ${it.detail ?: ""}")

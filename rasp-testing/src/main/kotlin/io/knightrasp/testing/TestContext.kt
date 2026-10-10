@@ -4,7 +4,7 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.config.RaspConfig
 import io.knightrasp.probe.Probes
 
-/** Membuat [RaspContext] untuk unit test dengan nilai default yang bisa dioverride. */
+/** Creates a [RaspContext] for unit tests with overridable default values. */
 fun testContext(
     probes: Probes = TestProbes(),
     config: RaspConfig = RaspConfig(),

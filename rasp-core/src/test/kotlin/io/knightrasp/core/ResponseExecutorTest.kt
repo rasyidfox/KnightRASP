@@ -115,7 +115,7 @@ class ResponseExecutorTest {
 
     @Test
     fun telemetry_failure_is_reported_but_does_not_throw() {
-        val telemetry = TelemetrySink { error("backend mati") }
+        val telemetry = TelemetrySink { error("backend down") }
         val executor = ResponseExecutor(Mode.MONITOR, telemetry, HostActions.NONE)
         val errors = mutableListOf<RaspError>()
 
@@ -143,7 +143,7 @@ class ResponseExecutorTest {
 
         executor.execute(
             listOf(
-                Response.Custom { error("aksi rusak") },
+                Response.Custom { error("broken action") },
                 Response.Custom { secondRan = true },
             ),
             assessment,

@@ -1,8 +1,8 @@
 package io.knightrasp.probe
 
 /**
- * Kumpulan probe — satu-satunya jalur check untuk mengakses OS.
- * Implementasi produksi ada di modul `rasp-probes`; test memakai fake.
+ * Collection of probes — the only channel checks have to access the OS.
+ * Production implementations live in the `rasp-probes` module; tests use fakes.
  */
 interface Probes {
     val file: FileProbe
@@ -11,46 +11,46 @@ interface Probes {
     val settings: SettingsProbe
     val system: SystemProbe
 
-    /** Probe native; null bila library native tidak tersedia (mis. varian tanpa NDK). */
+    /** Native probe; null when the native library is unavailable (e.g. NDK-less variant). */
     val native: NativeProbe?
 }
 
 interface FileProbe {
     fun exists(path: String): Boolean
 
-    /** Isi file sebagai UTF-8, atau null bila tidak bisa dibaca. */
+    /** File contents as UTF-8, or null when unreadable. */
     fun read(path: String): String?
 }
 
 interface ProcProbe {
-    /** Isi /proc/self/status, atau null bila gagal. */
+    /** Contents of /proc/self/status, or null on failure. */
     fun selfStatus(): String?
 
-    /** Isi /proc/self/maps, atau null bila gagal. */
+    /** Contents of /proc/self/maps, or null on failure. */
     fun selfMaps(): String?
 
-    /** Nama proses dari /proc/self/cmdline, atau null bila gagal. */
+    /** Process name from /proc/self/cmdline, or null on failure. */
     fun selfCmdline(): String?
 
-    /** Nama thread proses ini (dari /proc/self/task/&lt;tid&gt;/comm). */
+    /** Thread names of this process (from /proc/self/task/&lt;tid&gt;/comm). */
     fun threadNames(): List<String>
 }
 
 interface PackageProbe {
     /**
-     * Apakah paket terpasang dan terlihat oleh aplikasi.
-     * Catatan: pada Android 11+ visibilitas dibatasi; modul check mendeklarasikan
-     * `<queries>` untuk paket yang dicek.
+     * Whether the package is installed and visible to the app.
+     * Note: on Android 11+ visibility is restricted; check modules declare
+     * `<queries>` for the packages they inspect.
      */
     fun isInstalled(packageName: String): Boolean
 
-    /** SHA-256 (hex, lowercase) dari sertifikat penandatangan paket. */
+    /** SHA-256 (hex, lowercase) of the package signing certificate. */
     fun signingCertSha256(packageName: String): List<String>
 
-    /** Paket installer (mis. com.android.vending), atau null bila di-sideload. */
+    /** Installer package (e.g. com.android.vending), or null when sideloaded. */
     fun installerPackageName(packageName: String): String?
 
-    /** Path APK terpasang (sourceDir) paket, atau null bila tidak terbaca. */
+    /** Installed APK path (sourceDir) of the package, or null when unreadable. */
     fun apkPath(packageName: String): String?
 }
 
@@ -60,7 +60,7 @@ interface SettingsProbe {
     fun secureInt(key: String, default: Int): Int
 }
 
-/** Properti perangkat & status runtime dasar. */
+/** Device properties & basic runtime state. */
 interface SystemProbe {
     val manufacturer: String
     val brand: String
@@ -75,30 +75,30 @@ interface SystemProbe {
 
     fun isDebuggerConnected(): Boolean
 
-    /** Id komponen layanan accessibility yang aktif (format `paket/kelas`). */
+    /** Ids of enabled accessibility services (format `package/class`). */
     fun enabledAccessibilityServiceIds(): List<String>
 }
 
 /**
- * Probe yang berjalan di C/C++ lewat JNI. Dipakai untuk cek yang tidak dapat dipercaya
- * bila seluruhnya dijalankan di layer Java.
+ * A probe that runs in C/C++ via JNI. Used for checks that cannot be trusted
+ * when run entirely in the Java layer.
  */
 interface NativeProbe {
     /**
-     * Nama file library native yang sedang dimuat, mis. `libguardcore.so`.
-     * Dipakai check anti-tamper untuk mengenali mapping milik SDK sendiri.
+     * File name of the loaded native library, e.g. `libguardcore.so`.
+     * Used by anti-tamper checks to recognize the SDK's own mappings.
      */
     val libraryFileName: String
 
-    /** true = indikasi proses sedang di-ptrace / di-debug, terlihat dari layer native. */
+    /** true = the process shows signs of ptrace / debug from the native layer. */
     fun isDebuggerDetected(): Boolean
 
-    /** true = segmen executable library native berubah dari baseline (indikasi patching). */
+    /** true = the native library executable segment changed from baseline (patching indication). */
     fun isTextModified(): Boolean
 
-    /** true = artefak hook (frida/xposed/substrate) terlihat dari pembacaan /proc/self/maps. */
+    /** true = hook artifacts (frida/xposed/substrate) seen when reading /proc/self/maps. */
     fun isHooked(): Boolean
 
-    /** Hentikan proses lewat syscall langsung, tanpa melewati wrapper Java/libc. */
+    /** Kills the process via a raw syscall, bypassing Java/libc wrappers. */
     fun killProcess()
 }

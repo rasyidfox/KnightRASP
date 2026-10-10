@@ -1,2 +1,2 @@
-# Aturan R8 khusus aplikasi sample. SDK membawa consumer rules sendiri dari AAR,
-# jadi tidak ada yang perlu ditambahkan untuk KnightRASP.
+# R8 rules specific to the sample app. The SDK ships its own consumer rules in the AAR,
+# so nothing needs to be added for KnightRASP.

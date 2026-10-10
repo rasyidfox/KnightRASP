@@ -7,10 +7,11 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.ProcProbe
+import io.knightrasp.util.ObfuscatedStrings
 
 /**
- * `TracerPid` pada `/proc/self/status` bukan nol berarti proses sedang di-ptrace
- * (debugger native, frida, atau tracer lain).
+ * A non-zero `TracerPid` in `/proc/self/status` means the process is being ptraced
+ * (native debugger, frida, or another tracer).
  */
 class TracerPidCheck(private val proc: ProcProbe) : RaspCheck {
 
@@ -20,12 +21,12 @@ class TracerPidCheck(private val proc: ProcProbe) : RaspCheck {
 
     override fun run(ctx: RaspContext): CheckResult {
         val status = proc.selfStatus()
-            ?: return CheckResult.Unknown("tidak bisa membaca /proc/self/status")
+            ?: return CheckResult.Unknown("status unreadable")
         val tracerPid = TRACER_PID_PATTERN.find(status)?.groupValues?.getOrNull(1)?.toIntOrNull()
-            ?: return CheckResult.Unknown("TracerPid tidak ditemukan di /proc/self/status")
+            ?: return CheckResult.Unknown("unexpected status format")
 
         return if (tracerPid > 0) {
-            CheckResult.Detected(listOf(Evidence(id, CONFIDENCE, "TracerPid=$tracerPid")))
+            CheckResult.Detected(listOf(Evidence(id, CONFIDENCE, "pid=$tracerPid")))
         } else {
             CheckResult.Clean
         }
@@ -34,6 +35,8 @@ class TracerPidCheck(private val proc: ProcProbe) : RaspCheck {
     companion object {
         const val CONFIDENCE = 0.9f
 
-        private val TRACER_PID_PATTERN = Regex("""TracerPid:\s*(\d+)""")
+        /** Obfuscated regex `TracerPid:\s*(\d+)`. */
+        private val TRACER_PID_PATTERN: Regex =
+            Regex(ObfuscatedStrings.decode("193f2c2e283f1d242977113e676511296664", 0x4D))
     }
 }

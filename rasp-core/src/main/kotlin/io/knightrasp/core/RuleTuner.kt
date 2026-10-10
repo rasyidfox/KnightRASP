@@ -8,17 +8,17 @@ import io.knightrasp.model.Evidence
 import kotlin.math.min
 
 /**
- * Menerapkan [RaspRules] ke pipeline deteksi:
- * - memfilter check yang dimatikan,
- * - menyesuaikan confidence evidence per `checkId`,
- * - mengganti ambang threshold.
+ * Applies [RaspRules] to the detection pipeline:
+ * - filters out disabled checks,
+ * - adjusts evidence confidence per `checkId`,
+ * - replaces the score thresholds.
  *
- * Rules yang kedaluwarsa diabaikan seluruhnya. Pada [Environment.QA], check yang wajar
- * menyala saat development (debugger, ADB, developer options) dimatikan otomatis.
+ * Expired rules are ignored entirely. In [Environment.QA], checks that normally
+ * fire during development (debugger, ADB, developer options) are disabled automatically.
  */
 object RuleTuner {
 
-    /** Check yang dimatikan otomatis pada `Environment.QA`. */
+    /** Checks disabled automatically in `Environment.QA`. */
     val QA_DISABLED_CHECKS = setOf(
         "env.adb_enabled",
         "env.developer_options",

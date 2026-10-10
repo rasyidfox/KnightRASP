@@ -5,10 +5,10 @@ import java.security.Signature
 import org.json.JSONObject
 
 /**
- * Penandatangan envelope rules. Dipakai di sisi server/penerbit rules.
+ * Rules envelope signer. Used on the server/rules-publisher side.
  *
- * Modul klien hanya memerlukan public key (lihat [RuleEnvelopeVerifier]); private key
- * tidak pernah dikirim ke perangkat.
+ * The client module only needs the public key (see [RuleEnvelopeVerifier]); the private key
+ * is never sent to the device.
  */
 class RuleSigner(privateKey: PrivateKey) {
 

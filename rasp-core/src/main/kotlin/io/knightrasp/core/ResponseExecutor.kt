@@ -9,14 +9,14 @@ import io.knightrasp.model.ThreatAssessment
 import io.knightrasp.telemetry.TelemetrySink
 
 /**
- * Mengeksekusi [Response] hasil policy. Dipanggil di main thread.
+ * Executes the [Response]s produced by the policy. Called on the main thread.
  *
- * Pada [Mode.MONITOR], response yang dapat mengganggu pengguna (`Exit`, `Degrade`,
- * `Logout`, `BlockSensitiveOps`) dilewati dan hanya dicatat di log.
+ * In [Mode.MONITOR], user-disrupting responses (`Exit`, `Degrade`,
+ * `Logout`, `BlockSensitiveOps`) are skipped and only logged.
  *
- * @param killProcess aksi untuk [Response.Exit]; default memakai `android.os.Process`.
- *   Runtime produksi mengarahkannya ke `NativeProbe.killProcess` (syscall langsung)
- *   bila tersedia.
+ * @param killProcess action for [Response.Exit]; defaults to `android.os.Process`.
+ *   The production runtime routes it to `NativeProbe.killProcess` (raw syscall)
+ *   when available.
  */
 class ResponseExecutor(
     private val mode: Mode,
@@ -36,7 +36,7 @@ class ResponseExecutor(
                     onError(
                         RaspError(
                             RaspError.Code.ENGINE_FAILURE,
-                            "Response gagal dieksekusi: $response",
+                            "Response failed to execute: $response",
                             it,
                         )
                     )
@@ -69,13 +69,13 @@ class ResponseExecutor(
             Response.Report -> runCatching { telemetry.report(assessment) }
                 .onFailure {
                     onError(
-                        RaspError(RaspError.Code.TELEMETRY_FAILURE, "TelemetrySink.report gagal.", it)
+                        RaspError(RaspError.Code.TELEMETRY_FAILURE, "TelemetrySink.report failed.", it)
                     )
                 }
 
             Response.Exit -> if (mode == Mode.PROTECT) {
                 if (RaspLog.ENABLED) {
-                    RaspLog.w("Exit dieksekusi (mode PROTECT).")
+                    RaspLog.w("Exit executed (PROTECT mode).")
                 }
                 killProcess()
             } else {
@@ -84,7 +84,7 @@ class ResponseExecutor(
 
             Response.Degrade -> if (mode == Mode.PROTECT) {
                 if (RaspLog.ENABLED) {
-                    RaspLog.w("Degrade dieksekusi (mode PROTECT).")
+                    RaspLog.w("Degrade executed (PROTECT mode).")
                 }
                 hostActions.degrade(assessment)
             } else {
@@ -93,7 +93,7 @@ class ResponseExecutor(
 
             Response.Logout -> if (mode == Mode.PROTECT) {
                 if (RaspLog.ENABLED) {
-                    RaspLog.w("Logout dieksekusi (mode PROTECT).")
+                    RaspLog.w("Logout executed (PROTECT mode).")
                 }
                 hostActions.logout(assessment)
             } else {
@@ -102,7 +102,7 @@ class ResponseExecutor(
 
             Response.BlockSensitiveOps -> if (mode == Mode.PROTECT) {
                 if (RaspLog.ENABLED) {
-                    RaspLog.w("BlockSensitiveOps dieksekusi (mode PROTECT).")
+                    RaspLog.w("BlockSensitiveOps executed (PROTECT mode).")
                 }
                 hostActions.blockSensitiveOps(assessment)
             } else {
@@ -115,7 +115,7 @@ class ResponseExecutor(
 
     private fun suppressed(name: String) {
         if (RaspLog.ENABLED) {
-            RaspLog.w("$name diminta tetapi mode MONITOR; dilewati.")
+            RaspLog.w("$name requested but MONITOR mode; skipped.")
         }
     }
 

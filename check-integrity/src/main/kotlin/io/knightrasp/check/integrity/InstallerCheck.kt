@@ -9,11 +9,11 @@ import io.knightrasp.model.Evidence
 import io.knightrasp.probe.PackageProbe
 
 /**
- * Memeriksa asal instalasi. Sideload (tanpa installer) atau installer di luar daftar
- * [RaspContext.config] adalah sinyal lemah-menengah: banyak pengguna sah memasang APK
- * secara manual, jadi jangan jadikan bukti tunggal.
+ * Checks the installation source. Sideload (no installer) or an installer outside
+ * the list in [RaspContext.config] is a weak-to-medium signal: many legitimate users
+ * install APKs manually, so do not treat it as sole evidence.
  *
- * Bila `allowedInstallers` kosong, check melaporkan Unknown.
+ * When `allowedInstallers` is empty, the check reports Unknown.
  */
 class InstallerCheck(private val packages: PackageProbe) : RaspCheck {
 
@@ -24,12 +24,12 @@ class InstallerCheck(private val packages: PackageProbe) : RaspCheck {
     override fun run(ctx: RaspContext): CheckResult {
         val allowed = ctx.config.allowedInstallers.filter { it.isNotBlank() }.toSet()
         if (allowed.isEmpty()) {
-            return CheckResult.Unknown("allowedInstallers belum dikonfigurasi")
+            return CheckResult.Unknown("allowedInstallers not configured")
         }
 
         val installer = packages.installerPackageName(ctx.packageName)
             ?: return CheckResult.Detected(
-                listOf(Evidence(id, SIDELOAD_CONFIDENCE, "tidak ada installer (sideload)"))
+                listOf(Evidence(id, SIDELOAD_CONFIDENCE, "no installer (sideload)"))
             )
 
         return if (installer in allowed) {

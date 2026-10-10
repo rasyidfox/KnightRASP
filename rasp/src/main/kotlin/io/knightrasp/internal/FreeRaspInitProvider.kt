@@ -10,12 +10,12 @@ import io.knightrasp.nativebridge.NativeProbeImpl
 import io.knightrasp.probe.android.AndroidProbes
 
 /**
- * Menyambungkan [RaspRuntimeImpl] default ke [Rasp] saat proses aplikasi dimulai.
+ * Attaches the default [RaspRuntimeImpl] to [Rasp] when the app process starts.
  *
- * Provider ini didaftarkan di manifest modul `rasp` dan berjalan sebelum
- * `Application.onCreate`, jadi aplikasi konsumen tidak perlu melakukannya sendiri.
- * Provider tidak mengekspos data apa pun (semua method kontrak mengembalikan nilai
- * kosong).
+ * This provider is registered in the `rasp` module manifest and runs before
+ * `Application.onCreate`, so consumer apps do not need to do it themselves.
+ * The provider exposes no data (all contract methods return empty
+ * values).
  */
 class KnightRASPInitProvider : ContentProvider() {
 

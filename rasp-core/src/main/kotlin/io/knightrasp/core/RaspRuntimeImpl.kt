@@ -30,14 +30,14 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Implementasi default [RaspRuntime].
+ * Default [RaspRuntime] implementation.
  *
- * - `init` harus selesai cepat: tidak ada I/O, scan pertama dijadwalkan ke background.
- * - Scan asinkron di-coalesce: bila satu scan sedang berjalan, pemanggilan berikutnya
- *   dilewati (bukan diantrikan).
- * - Listener dan response selalu dipanggil di main thread.
- * - Fail-open: seluruh error internal dilaporkan lewat listener, tidak pernah melempar
- *   ke pemanggil.
+ * - `init` must complete quickly: no I/O, the first scan is scheduled to the background.
+ * - Async scans are coalesced: when one scan is running, subsequent calls are
+ *   skipped (not queued).
+ * - Listeners and responses are always invoked on the main thread.
+ * - Fail-open: all internal errors are reported through listeners and never
+ *   thrown to the caller.
  */
 class RaspRuntimeImpl(
     private val probes: Probes,
@@ -47,7 +47,7 @@ class RaspRuntimeImpl(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /** Scope eksekusi check; terpisah agar straggler tidak menahan scan. */
+    /** Check execution scope; separate so stragglers do not hold up the scan. */
     private val workScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val listeners = CopyOnWriteArrayList<RaspListener>()
@@ -86,7 +86,7 @@ class RaspRuntimeImpl(
         if (config.multiProcess == MultiProcessMode.MAIN_ONLY && !mainProcess) {
             initialized = true
             if (RaspLog.ENABLED) {
-                RaspLog.d("Bukan proses utama; mesin RASP tidak aktif di proses ini.")
+                RaspLog.d("Not the main process; the RASP engine is inactive in this process.")
             }
             return
         }
@@ -116,7 +116,7 @@ class RaspRuntimeImpl(
 
     override fun scan(trigger: Trigger) {
         if (!initialized) {
-            reportError(RaspError(RaspError.Code.NOT_INITIALIZED, "Rasp.init belum dipanggil."))
+            reportError(RaspError(RaspError.Code.NOT_INITIALIZED, "Rasp.init has not been called."))
             return
         }
         if (!active) {
@@ -125,7 +125,7 @@ class RaspRuntimeImpl(
         scope.launch {
             if (!scanMutex.tryLock()) {
                 if (RaspLog.ENABLED) {
-                    RaspLog.d("Scan dilewati: scan lain masih berjalan.")
+                    RaspLog.d("Scan skipped: another scan is still running.")
                 }
                 return@launch
             }
@@ -153,7 +153,7 @@ class RaspRuntimeImpl(
             }
             if (assessment == null) {
                 reportError(
-                    RaspError(RaspError.Code.SCAN_TIMEOUT, "scanSync melewati batas ${timeoutMs}ms.")
+                    RaspError(RaspError.Code.SCAN_TIMEOUT, "scanSync exceeded the ${timeoutMs}ms limit.")
                 )
                 ThreatAssessment.unknown(clock())
             } else {
@@ -161,7 +161,7 @@ class RaspRuntimeImpl(
             }
         } catch (t: Throwable) {
             if (t is CancellationException) throw t
-            reportError(RaspError(RaspError.Code.ENGINE_FAILURE, "scanSync gagal.", t))
+            reportError(RaspError(RaspError.Code.ENGINE_FAILURE, "scanSync failed.", t))
             ThreatAssessment.unknown(clock())
         }
     }
@@ -195,14 +195,14 @@ class RaspRuntimeImpl(
         } catch (t: CancellationException) {
             throw t
         } catch (t: Throwable) {
-            reportError(RaspError(RaspError.Code.ENGINE_FAILURE, "Scan gagal.", t))
+            reportError(RaspError(RaspError.Code.ENGINE_FAILURE, "Scan failed.", t))
             return
         }
 
         val responses = try {
             config.policy.responsesFor(assessment)
         } catch (t: Throwable) {
-            reportError(RaspError(RaspError.Code.INVALID_CONFIG, "Policy melempar exception.", t))
+            reportError(RaspError(RaspError.Code.INVALID_CONFIG, "Policy threw an exception.", t))
             emptyList()
         }
 
@@ -212,7 +212,7 @@ class RaspRuntimeImpl(
                 runCatching { listener.onAssessment(assessment) }
                     .onFailure {
                         if (RaspLog.ENABLED) {
-                            RaspLog.w("Listener melempar exception.", it)
+                            RaspLog.w("Listener threw an exception.", it)
                         }
                     }
             }
@@ -249,7 +249,7 @@ class RaspRuntimeImpl(
 
     private fun reportCheckFailure(checkId: String, cause: Throwable) {
         if (RaspLog.ENABLED) {
-            RaspLog.w("Check $checkId gagal: ${cause.message}")
+            RaspLog.w("Check $checkId failed: ${cause.message}")
         }
     }
 
@@ -262,7 +262,7 @@ class RaspRuntimeImpl(
                 runCatching { listener.onError(error) }
                     .onFailure {
                         if (RaspLog.ENABLED) {
-                            RaspLog.w("Listener.onError melempar exception.", it)
+                            RaspLog.w("Listener.onError threw an exception.", it)
                         }
                     }
             }
@@ -276,7 +276,7 @@ class RaspRuntimeImpl(
         return if (inRange && ordered) {
             null
         } else {
-            RaspError(RaspError.Code.INVALID_CONFIG, "Thresholds tidak valid: $t")
+            RaspError(RaspError.Code.INVALID_CONFIG, "Invalid thresholds: $t")
         }
     }
 }

@@ -8,25 +8,25 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.min
 
 data class TelemetryQueueConfig(
-    /** Jumlah maksimum event tersimpan; event terlama dibuang saat penuh. */
+    /** Maximum number of stored events; the oldest event is dropped when full. */
     val maxEvents: Int = 100,
-    /** Jumlah event per pengiriman. */
+    /** Number of events per upload. */
     val batchSize: Int = 10,
-    /** Level minimum yang dikirim; default LOW (NONE tidak pernah dikirim). */
+    /** Minimum level that is sent; default LOW (NONE is never sent). */
     val minLevel: Level = Level.LOW,
-    /** Delay awal retry; berlipat dua setiap kegagalan hingga [maxRetryDelayMs]. */
+    /** Initial retry delay; doubles on each failure up to [maxRetryDelayMs]. */
     val baseRetryDelayMs: Long = 60_000L,
     val maxRetryDelayMs: Long = 30 * 60_000L,
 )
 
 /**
- * [TelemetrySink] yang mengantre event ke [TelemetryQueue] lalu mengirimnya ke
- * [TelemetryUploader] secara batch di [TelemetryScheduler], dengan retry backoff.
+ * A [TelemetrySink] that queues events into [TelemetryQueue] and then uploads them via
+ * [TelemetryUploader] in batches on [TelemetryScheduler], with retry backoff.
  *
- * - `report()` hanya menyentuh antrean (tanpa jaringan) dan dipanggil dari main thread.
- * - Kegagalan upload tidak pernah melempar; batch tetap tersimpan untuk dicoba lagi.
- * - [redact] dapat dipakai host untuk membuang/mengubah field sebelum disimpan; return
- *   null berarti event dibuang.
+ * - `report()` only touches the queue (no network) and is called from the main thread.
+ * - Upload failures never throw; batches stay stored for another attempt.
+ * - [redact] lets the host drop/change fields before they are stored; returning
+ *   null means the event is dropped.
  */
 class QueuedTelemetrySink(
     private val queue: TelemetryQueue,
@@ -51,7 +51,7 @@ class QueuedTelemetrySink(
             .onSuccess { scheduler.execute(::drain) }
     }
 
-    /** Memproses antrean sekarang, sinkron. Berguna untuk test dan shutdown aplikasi. */
+    /** Drains the queue now, synchronously. Useful for tests and app shutdown. */
     fun flushNow() {
         drain()
     }

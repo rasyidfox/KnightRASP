@@ -6,8 +6,11 @@ plugins {
     `maven-publish`
 }
 
-// Nama file lib native (tanpa kata "rasp"), dipakai oleh CMake dan BuildConfig.
+// Native lib file name (without the word "rasp"), used by CMake and BuildConfig.
 val nativeLibName: String = (findProperty("knightrasp.nativeLibName") as String?) ?: "guardcore"
+val nativeLibKey: Int = 0x5A
+val nativeLibNameObf: String = nativeLibName.toByteArray(Charsets.UTF_8)
+    .joinToString(separator = "") { byte -> "%02x".format((byte.toInt() and 0xFF) xor nativeLibKey) }
 
 android {
     namespace = "io.knightrasp.nativebridge"
@@ -18,10 +21,11 @@ android {
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
 
-        buildConfigField("String", "NATIVE_LIB_NAME", "\"$nativeLibName\"")
+        buildConfigField("String", "NATIVE_LIB_NAME_OBF", "\"$nativeLibNameObf\"")
+        buildConfigField("int", "NATIVE_LIB_NAME_KEY", nativeLibKey.toString())
 
         ndk {
-            // ABI yang didukung library native. x86_64 disertakan untuk emulator/testing.
+            // ABIs supported by the native library. x86_64 is included for emulator/testing.
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
         }
 
@@ -40,8 +44,8 @@ android {
 
     externalNativeBuild {
         cmake {
-            // Versi CMake ditentukan oleh SDK (`cmake;3.22.1`) atau `cmake.dir`
-            // di local.properties untuk instalasi kustom.
+            // The CMake version is determined by the SDK (`cmake;3.22.1`) or `cmake.dir`
+            // in local.properties for custom installations.
             path = file("src/main/cpp/CMakeLists.txt")
         }
     }

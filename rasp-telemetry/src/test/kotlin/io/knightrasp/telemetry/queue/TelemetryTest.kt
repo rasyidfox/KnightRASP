@@ -35,13 +35,13 @@ class TelemetryEventCodecTest {
 
     @Test
     fun garbage_decodes_to_null() {
-        assertEquals(null, codec.decode("bukan json"))
+        assertEquals(null, codec.decode("not json"))
     }
 
     @Test
     fun unknown_category_is_skipped() {
         val line = """{"id":"x","ts":1,"level":"LOW","score":0.4,"sdk":"0.1.0",""" +
-            """"categories":{"TIDAK_ADA":0.9,"ROOT":0.5},"evidence":[]}"""
+            """"categories":{"NOT_PRESENT":0.9,"ROOT":0.5},"evidence":[]}"""
 
         val decoded = codec.decode(line)
 

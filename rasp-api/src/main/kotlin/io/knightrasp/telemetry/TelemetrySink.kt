@@ -3,11 +3,11 @@ package io.knightrasp.telemetry
 import io.knightrasp.model.ThreatAssessment
 
 /**
- * Sink telemetry. Default [NOOP] tidak mengirim data apa pun.
+ * Telemetry sink. The default [NOOP] sends no data at all.
  *
- * Implementasi pengiriman (queue, batching, retry) disediakan modul opsional
- * `rasp-telemetry` pada fase berikutnya; aplikasi juga bebas mengimplementasikan
- * sendiri, mis. meneruskan ke backend internal.
+ * The delivery implementation (queue, batching, retry) is provided by the optional
+ * `rasp-telemetry` module in a later phase; apps are also free to implement it
+ * themselves, e.g. forwarding to an internal backend.
  */
 fun interface TelemetrySink {
     fun report(assessment: ThreatAssessment)

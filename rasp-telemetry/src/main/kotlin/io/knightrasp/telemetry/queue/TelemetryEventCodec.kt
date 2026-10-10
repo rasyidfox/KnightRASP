@@ -6,7 +6,7 @@ import io.knightrasp.model.Level
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Serialisasi [TelemetryEvent] ke satu baris JSON (JSON Lines). */
+/** Serializes [TelemetryEvent] to a single JSON line (JSON Lines). */
 class TelemetryEventCodec {
 
     fun encode(event: TelemetryEvent): String {

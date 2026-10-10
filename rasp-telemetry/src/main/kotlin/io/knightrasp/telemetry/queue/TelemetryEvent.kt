@@ -7,11 +7,11 @@ import io.knightrasp.model.ThreatAssessment
 import java.util.UUID
 
 /**
- * Snapshot event yang dikirim ke backend.
+ * Snapshot event sent to the backend.
  *
- * Tidak ada identifier perangkat (IMEI, ANDROID_ID, dsb.) di sini; menambahkannya
- * adalah keputusan aplikasi host dan menjadi tanggung jawabnya terhadap kebijakan
- * privasi (mis. Play Data Safety / UU PDP).
+ * There are no device identifiers (IMEI, ANDROID_ID, etc.) here; adding them
+ * is the host app's decision and its responsibility under privacy
+ * policies (e.g. Play Data Safety / local data-protection laws).
  */
 data class TelemetryEvent(
     val id: String,

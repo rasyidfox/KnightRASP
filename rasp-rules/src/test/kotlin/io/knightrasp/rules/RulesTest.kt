@@ -94,7 +94,7 @@ class RulesTest {
 
     @Test
     fun malformed_envelope_is_rejected() {
-        assertNull(loader.loadEnvelope("bukan json", nowMs = 0L))
+        assertNull(loader.loadEnvelope("not json", nowMs = 0L))
         assertNull(loader.loadEnvelope("""{"payload":"x"}""", nowMs = 0L))
     }
 
@@ -108,7 +108,7 @@ class RulesTest {
         assertEquals(9, rules?.version)
     }
 
-    /** Server HTTP satu-request minimal (tanpa jdk.httpserver yang tidak ada di android.jar). */
+    /** Minimal one-request HTTP server (no jdk.httpserver, which is absent from android.jar). */
     private fun serveOnce(body: String): String {
         val server = ServerSocket(0)
         Thread {

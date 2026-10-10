@@ -4,10 +4,10 @@ import android.app.Activity
 import android.view.WindowManager
 
 /**
- * Utilitas FLAG_SECURE untuk mencegah screenshot/screen recording pada layar sensitif.
+ * FLAG_SECURE utility to prevent screenshots/screen recording on sensitive screens.
  *
- * Ini satu-satunya pertahanan screen capture yang andal di Android: deteksi perekaman
- * milik aplikasi lain tidak tersedia lewat API publik.
+ * This is the only reliable screen-capture defense on Android: detecting recording
+ * by other apps is not available through public APIs.
  */
 object ScreenGuard {
 

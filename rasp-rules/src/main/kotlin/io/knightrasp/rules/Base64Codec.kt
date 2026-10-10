@@ -3,10 +3,10 @@ package io.knightrasp.rules
 import java.io.ByteArrayOutputStream
 
 /**
- * Base64 standar (RFC 4648) tanpa dependensi.
+ * Standard Base64 (RFC 4648) with no dependencies.
  *
- * Tidak memakai `android.util.Base64` agar modul ini dapat di-unit-test murni di JVM,
- * dan tidak memakai `java.util.Base64` yang baru tersedia sejak API 26.
+ * Does not use `android.util.Base64` so this module can be unit-tested purely on the JVM,
+ * and does not use `java.util.Base64`, which is only available since API 26.
  */
 internal object Base64Codec {
 
@@ -43,7 +43,7 @@ internal object Base64Codec {
                 continue
             }
             require(char.code < DECODE_TABLE.size && DECODE_TABLE[char.code] >= 0) {
-                "Karakter Base64 tidak valid"
+                "Invalid Base64 character"
             }
             buffer = (buffer shl 6) or DECODE_TABLE[char.code]
             bits += 6

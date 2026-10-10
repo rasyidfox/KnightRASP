@@ -1,10 +1,10 @@
 package io.knightrasp.core
 
 /**
- * Logger internal — varian **release**: no-op.
+ * Internal logger — **release** variant: no-op.
  *
- * `ENABLED` adalah konstanta `false`, sehingga R8 menghapus seluruh call site logging
- * beserta string pesannya. Tidak ada referensi ke `android.util.Log` di APK release.
+ * `ENABLED` is the constant `false`, so R8 removes all logging call sites
+ * along with their message strings. There are no references to `android.util.Log` in a release APK.
  */
 object RaspLog {
 

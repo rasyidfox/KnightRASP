@@ -1,6 +1,7 @@
 package io.knightrasp.probe.android
 
 import io.knightrasp.probe.ProcProbe
+import io.knightrasp.util.ObfuscatedStrings
 import java.io.File
 import java.io.FileInputStream
 
@@ -14,19 +15,19 @@ class AndroidProcProbe : ProcProbe {
 
     private val mapsLock = Any()
 
-    /** Buffer baca yang dipakai ulang agar tidak alokasi 4 MB setiap scan. */
+    /** Reused read buffer so 4 MB is not allocated on every scan. */
     private var readBuffer = ByteArray(0)
 
     override fun selfStatus(): String? = readLimited(STATUS_PATH, MAX_STATUS_LINES)
 
     /**
-     * `/proc/self/maps` dibaca sebagai byte mentah (cepat) lalu di-cache singkat.
-     * Pembacaan baris-per-baris lewat `useLines` terbukti lambat (>1 dtk) saat cold
-     * start di device mid-range; beberapa check memakai data yang sama di scan yang sama,
-     * jadi cache-nya juga single-flight (pembaca kedua menunggu pembaca pertama).
+     * `/proc/self/maps` is read as raw bytes (fast) and then briefly cached.
+     * Line-by-line reading through `useLines` proved slow (>1 s) on cold
+     * start on mid-range devices; several checks use the same data in the same scan,
+     * so the cache is also single-flight (the second reader waits for the first).
      *
-     * Cache dilepas saat kedaluwarsa supaya string multi-megabyte tidak menetap di
-     * memori proses; buffer baca dipakai ulang untuk menekan tekanan GC.
+     * The cache is released on expiry so the multi-megabyte string does not linger in
+     * process memory; the read buffer is reused to reduce GC pressure.
      */
     override fun selfMaps(): String? {
         val now = System.currentTimeMillis()
@@ -64,7 +65,7 @@ class AndroidProcProbe : ProcProbe {
     override fun threadNames(): List<String> = try {
         File(TASK_DIR).listFiles()
             ?.mapNotNull { dir ->
-                val comm = File(dir, "comm")
+                val comm = File(dir, COMM_FILE)
                 if (comm.exists()) comm.readText(Charsets.UTF_8).trim() else null
             }
             ?: emptyList()
@@ -112,10 +113,13 @@ class AndroidProcProbe : ProcProbe {
     }
 
     private companion object {
-        const val STATUS_PATH = "/proc/self/status"
-        const val MAPS_PATH = "/proc/self/maps"
-        const val CMDLINE_PATH = "/proc/self/cmdline"
-        const val TASK_DIR = "/proc/self/task"
+        /** Obfuscated /proc paths and thread comm file name. */
+        val STATUS_PATH: String = ObfuscatedStrings.decode("1a45475a561a465059531a464154414046", 0x35)
+        val MAPS_PATH: String = ObfuscatedStrings.decode("4e11130e024e12040d074e0c001112", 0x61)
+        val CMDLINE_PATH: String = ObfuscatedStrings.decode("38676578743864727b7138747a737b7e7972", 0x17)
+        val TASK_DIR: String = ObfuscatedStrings.decode("540b09141854081e171d540f1a0810", 0x7B)
+        val COMM_FILE: String = ObfuscatedStrings.decode("6c606262", 0x0F)
+
         const val MAX_STATUS_LINES = 512
         const val MAX_MAPS_BYTES = 4 * 1024 * 1024
         const val MAPS_CACHE_TTL_MS = 1_000L

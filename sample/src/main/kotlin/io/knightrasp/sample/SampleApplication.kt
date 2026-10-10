@@ -23,14 +23,14 @@ class SampleApplication : Application() {
         Rasp.init(
             this,
             RaspConfig(
-                // Mode PROTECT + kebijakan senyap: begitu terdeteksi ancaman level HIGH
-                // ke atas (root/Frida/integritas), aplikasi ditutup paksa tanpa log,
-                // dialog, atau error apa pun (native exit_group).
+                // PROTECT mode + silent policy: as soon as a HIGH-level threat is detected
+                // or above (root/Frida/integrity), the app is force-closed with no log,
+                // dialog, or error of any kind (native exit_group).
                 mode = Mode.PROTECT,
                 environment = Environment.RELEASE,
                 policy = Policies.silentKillOn(Level.HIGH),
                 telemetry = createTelemetry(),
-                // Contoh rules inline. Di produksi, muat lewat SignedRulesLoader:
+                // Example inline rules. In production, load them via SignedRulesLoader:
                 //   SignedRulesLoader(RuleEnvelopeVerifier(PUBLIC_KEY))
                 //       .loadFromUrl("https://backend.example/rules.json", ...)
                 rules = RaspRules(
@@ -38,7 +38,7 @@ class SampleApplication : Application() {
                     disabledChecks = setOf("env.developer_options"),
                     confidenceScale = mapOf("integrity.installer" to 0.5f),
                 ),
-                // Log SDK sepenuhnya senyap. Set true hanya saat debugging lokal.
+                // SDK logging is fully silent. Set true only for local debugging.
                 debugLogging = false,
             ),
         )
@@ -46,7 +46,7 @@ class SampleApplication : Application() {
 
     private fun createTelemetry(): QueuedTelemetrySink {
         val uploader = io.knightrasp.telemetry.queue.TelemetryUploader { _ ->
-            // Ganti dengan backend Anda. Tidak ada log: mode senyap.
+            // Replace with your own backend. No logging: silent mode.
             true
         }
         return QueuedTelemetrySink(

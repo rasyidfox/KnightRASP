@@ -4,29 +4,29 @@ import io.knightrasp.model.ThreatAssessment
 import io.knightrasp.telemetry.TelemetrySink
 
 /**
- * Konfigurasi SDK.
+ * SDK configuration.
  *
- * @param mode MONITOR: response berbahaya (Exit, Degrade, Logout, BlockSensitiveOps)
- *   tidak dieksekusi; PROTECT: dieksekusi penuh.
- * @param environment QA mematikan blokir untuk perangkat pengembangan (versi berikutnya
- *   menambahkan allowlist emulator/perangkat tim).
- * @param enabledChecks daftar `checkId` yang diaktifkan; kosong berarti semua.
- * @param disabledChecks daftar `checkId` yang dimatikan; menang atas [enabledChecks].
- * @param thresholds ambang skor untuk pemetaan [io.knightrasp.model.Level].
- * @param policy fungsi yang memetakan assessment ke daftar [Response].
- * @param telemetry sink telemetry; default tidak mengirim apa pun.
- * @param multiProcess MAIN_ONLY: hanya proses utama menjalankan mesin RASP.
- * @param expectedSignatureSha256 SHA-256 (hex, lowercase) sertifikat penandatangan yang
- *   sah. Bila kosong, `integrity.signature` melaporkan Unknown (tidak memverifikasi).
- * @param allowedInstallers paket installer yang dianggap sah (mis.
- *   `com.android.vending`). Bila kosong, `integrity.installer` melaporkan Unknown.
- * @param hostActions implementasi aksi tingkat aplikasi; default tidak melakukan apa pun.
- * @param rules tuning dari remote rules yang sudah diverifikasi; null berarti tanpa rules.
- * @param allowedAccessibilityServices id layanan accessibility (`paket/kelas`) yang
- *   dianggap sah (mis. TalkBack). Bila kosong, `env.accessibility_services` melaporkan
- *   Unknown agar tidak menuduh terlalu dini.
- * @param debugLogging menyalakan log internal SDK. Default `false` (senyap) — pada
- *   build release, kode logging tidak ada sama sekali.
+ * @param mode MONITOR: harmful responses (Exit, Degrade, Logout, BlockSensitiveOps) are
+ *   not executed; PROTECT: they are fully executed.
+ * @param environment QA disables blocking for development devices (a later version
+ *   adds an emulator/team-device allowlist).
+ * @param enabledChecks list of enabled `checkId`s; empty means all.
+ * @param disabledChecks list of disabled `checkId`s; takes precedence over [enabledChecks].
+ * @param thresholds score thresholds for mapping to [io.knightrasp.model.Level].
+ * @param policy function that maps an assessment to a list of [Response]s.
+ * @param telemetry telemetry sink; by default it sends nothing.
+ * @param multiProcess MAIN_ONLY: only the main process runs the RASP engine.
+ * @param expectedSignatureSha256 SHA-256 (hex, lowercase) of the accepted signing
+ *   certificate. When empty, `integrity.signature` reports Unknown (no verification).
+ * @param allowedInstallers installer packages considered acceptable (e.g.
+ *   `com.android.vending`). When empty, `integrity.installer` reports Unknown.
+ * @param hostActions app-level action implementation; by default it does nothing.
+ * @param rules tuning from verified remote rules; null means no rules.
+ * @param allowedAccessibilityServices accessibility service ids (`package/class`)
+ *   considered acceptable (e.g. TalkBack). When empty, `env.accessibility_services` reports
+ *   Unknown to avoid accusing too early.
+ * @param debugLogging enables internal SDK logging. Default `false` (silent) — in
+ *   release builds the logging code is absent entirely.
  */
 data class RaspConfig @JvmOverloads constructor(
     val mode: Mode = Mode.MONITOR,
@@ -52,7 +52,7 @@ enum class Environment { RELEASE, QA }
 enum class MultiProcessMode { MAIN_ONLY, ALL }
 
 /**
- * Ambang skor (0..1). Pemetaan standar:
+ * Score thresholds (0..1). Standard mapping:
  * `score >= high` → CRITICAL, `>= medium` → HIGH, `>= low` → MEDIUM, `> 0` → LOW.
  */
 data class Thresholds(
@@ -61,42 +61,42 @@ data class Thresholds(
     val high: Float = 0.85f,
 )
 
-/** Kebijakan milik aplikasi: assessment → response yang diminta. */
+/** App-owned policy: assessment → requested responses. */
 fun interface Policy {
     fun responsesFor(assessment: ThreatAssessment): List<Response>
 
     companion object {
-        /** Default: log dan laporkan, tanpa aksi yang mengganggu pengguna. */
+        /** Default: log and report, with no user-disrupting actions. */
         @JvmField
         val ALERT_ONLY: Policy = Policy { listOf(Response.Log, Response.Report) }
     }
 }
 
 /**
- * Aksi yang diminta oleh [Policy].
+ * Actions requested by the [Policy].
  *
- * Response `Exit`, `Degrade`, `Logout`, dan `BlockSensitiveOps` hanya dieksekusi pada
- * [Mode.PROTECT]; pada [Mode.MONITOR] semuanya dilewati (hanya dicatat di log).
+ * The `Exit`, `Degrade`, `Logout`, and `BlockSensitiveOps` responses are executed only in
+ * [Mode.PROTECT]; in [Mode.MONITOR] they are all skipped (only logged).
  */
 sealed interface Response {
-    /** Tulis ringkasan assessment ke logcat. */
+    /** Writes an assessment summary to logcat. */
     data object Log : Response
 
-    /** Kirim assessment ke [TelemetrySink] yang dikonfigurasi. */
+    /** Sends the assessment to the configured [TelemetrySink]. */
     data object Report : Response
 
-    /** Hentikan proses aplikasi (native syscall bila tersedia). */
+    /** Stops the app process (native syscall when available). */
     data object Exit : Response
 
-    /** Minta host menonaktifkan fitur sensitif sementara lewat [HostActions.degrade]. */
+    /** Asks the host to temporarily disable sensitive features via [HostActions.degrade]. */
     data object Degrade : Response
 
-    /** Minta host membersihkan session dan memaksa login ulang lewat [HostActions.logout]. */
+    /** Asks the host to clear the session and force a re-login via [HostActions.logout]. */
     data object Logout : Response
 
-    /** Minta host memblokir operasi sensitif lewat [HostActions.blockSensitiveOps]. */
+    /** Asks the host to block sensitive operations via [HostActions.blockSensitiveOps]. */
     data object BlockSensitiveOps : Response
 
-    /** Aksi milik aplikasi; dipanggil di main thread. */
+    /** App-owned action; invoked on the main thread. */
     data class Custom(val action: () -> Unit) : Response
 }

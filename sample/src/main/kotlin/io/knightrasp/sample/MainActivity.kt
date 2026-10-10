@@ -23,10 +23,10 @@ class MainActivity : Activity(), RaspListener {
             setPadding(48, 48, 48, 48)
         }
         statusView = TextView(this).apply {
-            text = "Menunggu hasil scan..."
+            text = "Waiting for scan result..."
         }
         val scanButton = Button(this).apply {
-            text = "Scan sekarang"
+            text = "Scan now"
             setOnClickListener { Rasp.scan(Trigger.ON_DEMAND) }
         }
         layout.addView(statusView)

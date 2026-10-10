@@ -9,9 +9,9 @@ import io.knightrasp.model.Evidence
 import io.knightrasp.probe.NativeProbe
 
 /**
- * Integritas segmen executable library native: hash diambil saat baseline (pemanggilan
- * pertama) lalu dibandingkan pada pemanggilan berikutnya. Perubahan mengindikasikan
- * library di-patch secara runtime (inline hook / memory patch).
+ * Native library executable segment integrity: a hash is taken at baseline (first
+ * call) and compared on subsequent calls. A change indicates the library was
+ * patched at runtime (inline hook / memory patch).
  */
 class NativeTextIntegrityCheck(private val native: NativeProbe?) : RaspCheck {
 
@@ -20,10 +20,10 @@ class NativeTextIntegrityCheck(private val native: NativeProbe?) : RaspCheck {
     override val cost = Cost.LOW
 
     override fun run(ctx: RaspContext): CheckResult {
-        val probe = native ?: return CheckResult.Unknown("native probe tidak tersedia")
+        val probe = native ?: return CheckResult.Unknown("native probe unavailable")
         return if (probe.isTextModified()) {
             CheckResult.Detected(
-                listOf(Evidence(id, CONFIDENCE, "segmen executable library berubah dari baseline"))
+                listOf(Evidence(id, CONFIDENCE, "library executable segment changed from baseline"))
             )
         } else {
             CheckResult.Clean

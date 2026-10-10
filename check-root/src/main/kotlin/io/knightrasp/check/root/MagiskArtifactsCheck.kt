@@ -8,10 +8,11 @@ import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.FileProbe
 import io.knightrasp.probe.PackageProbe
+import io.knightrasp.util.ObfuscatedStrings
 
 /**
- * Artefak Magisk/KernelSU/LSPosed: direktori data dan paket manager.
- * Direktori `/data/adb` (magisk/ksu) umumnya hanya ada pada perangkat dengan root modern.
+ * Magisk/KernelSU/LSPosed artifacts: data directories and manager packages.
+ * The `/data/adb` directory (magisk/ksu) usually exists only on devices with modern root.
  */
 class MagiskArtifactsCheck(
     private val files: FileProbe,
@@ -41,19 +42,17 @@ class MagiskArtifactsCheck(
         const val PATH_CONFIDENCE = 0.7f
         const val PACKAGE_CONFIDENCE = 0.5f
 
-        val MAGISK_PATHS = listOf(
-            "/data/adb/magisk",
-            "/data/adb/modules",
-            "/sbin/.magisk",
-            "/sbin/.core",
-            "/data/adb/ksu",
+        /** Obfuscated constants (see SuBinaryCheck). */
+        val MAGISK_PATHS: List<String> = ObfuscatedStrings.decodeList(
+            "743f3a2f3a743a3f3974363a3c32283051743f3a2f3a743a3f397436343f2e373e28517428393235747536" +
+                "3a3c32283051742839323574753834293e51743f3a2f3a743a3f397430282e",
+            0x5B,
         )
 
-        val ROOT_MANAGER_PACKAGES = listOf(
-            "com.topjohnwu.magisk",
-            "me.weishu.kernelsu",
-            "org.lsposed.manager",
-            "eu.chainfire.supersu",
+        val ROOT_MANAGER_PACKAGES: List<String> = ObfuscatedStrings.decodeList(
+            "121e1c5f051e011b1e191f06045f1c101618021a7b1c145f0614180219045f1a14031f141d02047b1e0316" +
+                "5f1d02011e0214155f1c101f101614037b14045f121910181f171803145f02040114030204",
+            0x71,
         )
     }
 }

@@ -3,7 +3,7 @@ package io.knightrasp.core
 import io.knightrasp.check.CheckResult
 import java.util.concurrent.ConcurrentHashMap
 
-/** Cache hasil check per id dengan TTL; dipakai agar scan berulang tidak mengulang kerja mahal. */
+/** Per-id check result cache with TTL; used so repeated scans do not redo expensive work. */
 class TtlCache(private val clock: () -> Long = System::currentTimeMillis) {
 
     private class Entry(val result: CheckResult, val expiresAtMs: Long)

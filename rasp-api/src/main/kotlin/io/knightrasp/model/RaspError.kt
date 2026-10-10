@@ -1,6 +1,6 @@
 package io.knightrasp.model
 
-/** Error internal SDK. SDK bersifat fail-open: error tidak pernah menjatuhkan aplikasi. */
+/** SDK internal error. The SDK is fail-open: errors never crash the app. */
 data class RaspError(
     val code: Code,
     val message: String,

@@ -1,13 +1,13 @@
 package io.knightrasp.model
 
 /**
- * Hasil agregasi satu atau beberapa scan.
+ * Result of aggregating one or more scans.
  *
- * @param score skor keyakinan global 0..1 (agregasi antar kategori).
- * @param level pemetaan [score] terhadap ambang; NONE berarti tidak ada indikasi.
- * @param categories skor per kategori (noisy-OR evidence di kategori yang sama).
- * @param evidence seluruh evidence yang terkumpul.
- * @param timestampMs waktu assessment dibuat (epoch ms).
+ * @param score global confidence score 0..1 (aggregated across categories).
+ * @param level mapping of [score] to thresholds; NONE means no indication.
+ * @param categories per-category scores (noisy-OR of evidence in the same category).
+ * @param evidence all collected evidence.
+ * @param timestampMs time the assessment was created (epoch ms).
  */
 data class ThreatAssessment(
     val score: Float,
@@ -17,7 +17,7 @@ data class ThreatAssessment(
     val timestampMs: Long,
 ) {
     companion object {
-        /** Assessment kosong; dipakai saat scan tidak dapat dijalankan. */
+        /** Empty assessment; used when a scan cannot run. */
         @JvmStatic
         fun unknown(nowMs: Long): ThreatAssessment =
             ThreatAssessment(

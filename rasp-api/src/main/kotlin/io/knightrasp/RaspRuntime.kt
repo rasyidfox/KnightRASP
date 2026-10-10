@@ -6,11 +6,11 @@ import io.knightrasp.model.ThreatAssessment
 import io.knightrasp.model.Trigger
 
 /**
- * Kontrak internal antara facade [Rasp] dan mesin RASP.
+ * Internal contract between the [Rasp] facade and the RASP engine.
  *
- * Implementasi default disediakan oleh `rasp-core` dan di-attach oleh modul agregat
- * `rasp`. Jangan bergantung pada interface ini dari kode aplikasi; API publik ada
- * di [Rasp].
+ * The default implementation is provided by `rasp-core` and attached by the aggregate
+ * `rasp` module. Do not depend on this interface from app code; the public API is
+ * in [Rasp].
  */
 interface RaspRuntime {
     fun init(app: Application, config: RaspConfig)

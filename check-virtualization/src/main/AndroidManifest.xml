@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Visibilitas paket (Android 11+): host app cloner yang dicek. -->
+    <!-- Package visibility (Android 11+): app-cloner hosts that are checked. -->
     <queries>
         <package android:name="com.lbe.parallel" />
         <package android:name="com.lbe.parallel.intl" />

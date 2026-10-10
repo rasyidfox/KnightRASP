@@ -15,15 +15,15 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Menjalankan check dalam dua gelombang (LOW dulu, lalu MEDIUM/HIGH), paralel di dalam
- * gelombang, dengan timeout dan isolasi per check.
+ * Runs checks in two waves (LOW first, then MEDIUM/HIGH), in parallel within
+ * each wave, with a timeout and isolation per check.
  *
- * Check dieksekusi di [workScope] yang **tidak** di-join oleh scan, sehingga check yang
- * melewati timeout ditinggalkan (hasilnya dibuang) tanpa menahan scan. Coroutine
- * straggler akan selesai sendiri di thread I/O-nya.
+ * Checks run in [workScope], which the scan does **not** join, so checks that
+ * exceed the timeout are abandoned (their result is discarded) without holding up the scan.
+ * Straggler coroutines finish on their own on the I/O thread.
  *
- * Hasil `Clean`/`Detected` di-cache sesuai TTL cost; `Unknown` dan kegagalan tidak
- * di-cache.
+ * `Clean`/`Detected` results are cached according to the cost TTL; `Unknown` and failures are
+ * not cached.
  */
 class ScanEngine(
     checks: List<RaspCheck>,
@@ -86,7 +86,7 @@ class ScanEngine(
         val completed = withTimeoutOrNull(timeoutMs) { worker.await() }
         if (completed == null) {
             worker.cancel()
-            onCheckFailure(check.id, TimeoutException("Check ${check.id} melewati ${timeoutMs}ms."))
+            onCheckFailure(check.id, TimeoutException("Check ${check.id} exceeded ${timeoutMs}ms."))
             return null
         }
 

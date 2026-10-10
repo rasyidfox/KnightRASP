@@ -1,10 +1,10 @@
 package io.knightrasp.telemetry.queue
 
 /**
- * Antrean telemetry persisten dengan batas jumlah event.
+ * Persistent telemetry queue with an event-count limit.
  *
- * Saat antrean penuh, event **terlama** dibuang agar insiden terbaru tetap terkirim.
- * Semua operasi disinkronkan; store dianggap sebagai satu-satunya sumber kebenaran.
+ * When the queue is full, the **oldest** event is dropped so the newest incidents are still sent.
+ * All operations are synchronized; the store is treated as the single source of truth.
  */
 class TelemetryQueue(
     private val store: TelemetryStore,

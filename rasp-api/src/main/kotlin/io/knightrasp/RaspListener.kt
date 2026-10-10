@@ -4,15 +4,15 @@ import io.knightrasp.model.RaspError
 import io.knightrasp.model.ThreatAssessment
 
 /**
- * Callback hasil scan dan error SDK.
+ * Callbacks for scan results and SDK errors.
  *
- * Semua callback dipanggil di main thread. Satu listener yang melempar exception
- * tidak menghentikan listener lain.
+ * All callbacks are invoked on the main thread. One listener throwing an exception
+ * does not stop the other listeners.
  */
 interface RaspListener {
-    /** Dipanggil setiap selesai scan asinkron. */
+    /** Called whenever an asynchronous scan completes. */
     fun onAssessment(result: ThreatAssessment) {}
 
-    /** Dipanggil saat SDK mengalami error internal (fail-open). */
+    /** Called when the SDK hits an internal error (fail-open). */
     fun onError(error: RaspError) {}
 }

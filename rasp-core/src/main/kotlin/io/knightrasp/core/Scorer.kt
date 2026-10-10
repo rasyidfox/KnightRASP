@@ -7,7 +7,7 @@ import io.knightrasp.model.Level
 import io.knightrasp.model.ThreatAssessment
 import kotlin.math.min
 
-/** Hasil dari satu check yang ikut menyumbang skor. */
+/** Result of one check that contributes to the score. */
 data class CheckOutcome(
     val checkId: String,
     val category: Category,
@@ -15,11 +15,11 @@ data class CheckOutcome(
 )
 
 /**
- * Agregasi evidence menjadi [ThreatAssessment].
+ * Aggregates evidence into a [ThreatAssessment].
  *
- * - Per kategori: noisy-OR — `1 - Π(1 - confidence_i)`.
- * - Global: skor kategori terkuat + bonus kecil bila >= 2 kategori mencurigakan,
- *   sehingga banyak sinyal lemah pada satu kategori tidak otomatis menjadi CRITICAL.
+ * - Per category: noisy-OR — `1 - Π(1 - confidence_i)`.
+ * - Global: strongest category score + a small bonus when >= 2 categories are suspicious,
+ *   so many weak signals in one category do not automatically become CRITICAL.
  */
 class Scorer(private val thresholds: Thresholds) {
 
@@ -60,7 +60,7 @@ class Scorer(private val thresholds: Thresholds) {
     }
 
     companion object {
-        /** Bonus bila ada >= 2 kategori mencurigakan. */
+        /** Bonus when there are >= 2 suspicious categories. */
         const val MULTI_CATEGORY_BONUS = 0.05f
     }
 }

@@ -8,15 +8,15 @@ import io.knightrasp.model.Trigger
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Facade publik SDK KnightRASP.
+ * Public facade of the KnightRASP SDK.
  *
- * Semua method aman dipanggil dari main thread dan tidak pernah melempar exception ke
- * pemanggil; kegagalan dilaporkan melalui [RaspListener.onError].
+ * All methods are safe to call from the main thread and never throw exceptions to
+ * the caller; failures are reported via [RaspListener.onError].
  *
- * Runtime di-attach otomatis oleh modul agregat `io.knightrasp:rasp` (lewat
- * ContentProvider) sebelum `Application.onCreate` berjalan. Bila aplikasi hanya
- * memakai `rasp-api` tanpa modul agregat, panggilan [init] akan melaporkan error
- * `NOT_INITIALIZED` dan tidak melakukan apa pun (fail-open).
+ * The runtime is attached automatically by the aggregate `io.knightrasp:rasp` module (via
+ * a ContentProvider) before `Application.onCreate` runs. If the app uses only
+ * `rasp-api` without the aggregate module, the [init] call reports a
+ * `NOT_INITIALIZED` error and does nothing (fail-open).
  */
 object Rasp {
     @Volatile
@@ -25,8 +25,8 @@ object Rasp {
     private val listeners = CopyOnWriteArrayList<RaspListener>()
 
     /**
-     * Menyambungkan runtime ke facade. Dipanggil otomatis oleh modul agregat `rasp`.
-     * Hanya panggil manual bila mengintegrasikan modul-modul secara terpisah.
+     * Attaches the runtime to the facade. Called automatically by the `rasp` aggregate module.
+     * Call manually only when integrating the modules separately.
      */
     @JvmStatic
     fun attachRuntime(runtime: RaspRuntime) {
@@ -34,7 +34,7 @@ object Rasp {
         listeners.forEach(runtime::addListener)
     }
 
-    /** Inisialisasi SDK. Panggil sekali di `Application.onCreate`. */
+    /** Initializes the SDK. Call once in `Application.onCreate`. */
     @JvmStatic
     fun init(app: Application, config: RaspConfig) {
         val runtime = runtime
@@ -42,7 +42,7 @@ object Rasp {
             reportError(
                 RaspError(
                     RaspError.Code.NOT_INITIALIZED,
-                    "Tidak ada RASP runtime. Tambahkan dependency io.knightrasp:rasp.",
+                    "No RASP runtime. Add the io.knightrasp:rasp dependency.",
                 )
             )
             return
@@ -50,25 +50,25 @@ object Rasp {
         runtime.init(app, config)
     }
 
-    /** Menjalankan scan asinkron; hasil dikirim ke listener. */
+    /** Runs an asynchronous scan; the result is delivered to listeners. */
     @JvmStatic
     @JvmOverloads
     fun scan(trigger: Trigger = Trigger.ON_DEMAND) {
         val runtime = runtime
         if (runtime == null) {
-            reportError(RaspError(RaspError.Code.NOT_INITIALIZED, "RASP belum memiliki runtime."))
+            reportError(RaspError(RaspError.Code.NOT_INITIALIZED, "RASP has no runtime yet."))
             return
         }
         runtime.scan(trigger)
     }
 
-    /** Scan sinkron dengan timeout, untuk gate di titik kritis (login, transfer). */
+    /** Synchronous scan with a timeout, for gates at critical points (login, transfer). */
     @JvmStatic
     @JvmOverloads
     fun scanSync(timeoutMs: Long = 2_000L): ThreatAssessment {
         val runtime = runtime
         if (runtime == null) {
-            reportError(RaspError(RaspError.Code.NOT_INITIALIZED, "RASP belum memiliki runtime."))
+            reportError(RaspError(RaspError.Code.NOT_INITIALIZED, "RASP has no runtime yet."))
             return ThreatAssessment.unknown(System.currentTimeMillis())
         }
         return runtime.scanSync(timeoutMs)
@@ -86,7 +86,7 @@ object Rasp {
         runtime?.removeListener(listener)
     }
 
-    /** Menghentikan runtime: membatalkan scan yang berjalan dan melepas lifecycle callback. */
+    /** Stops the runtime: cancels running scans and releases lifecycle callbacks. */
     @JvmStatic
     fun shutdown() {
         runtime?.shutdown()

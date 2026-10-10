@@ -1,24 +1,27 @@
 package io.knightrasp.nativebridge
 
 import io.knightrasp.probe.NativeProbe
+import io.knightrasp.util.ObfuscatedStrings
 
 /**
- * Implementasi [NativeProbe] di atas library native SDK.
+ * [NativeProbe] implementation backed by the SDK's native library.
  *
- * Nama file library berasal dari `BuildConfig.NATIVE_LIB_NAME` (diatur lewat properti
- * Gradle `rasp.nativeLibName`) sehingga output `.so` tidak memuat kata "rasp".
+ * The library name is decoded at runtime from an obfuscated BuildConfig value
+ * (configured through the `knightrasp.nativeLibName` Gradle property), so the
+ * plain name does not appear as a literal in the dex.
  *
- * Jika library tidak dapat dimuat (ABI tidak didukung, .so hilang), [createOrNull]
- * mengembalikan null dan check yang bergantung pada native melaporkan Unknown —
- * SDK tetap berjalan (fail-open). Pemuatan senyap: tidak ada log.
+ * If the library cannot be loaded (unsupported ABI, missing .so), [createOrNull]
+ * returns null and native-dependent checks report Unknown — the SDK stays
+ * fail-open. Loading is silent: no logging.
  *
- * Nama kelas dan method `external` adalah kontrak dengan sisi C++ (JNI), jangan diubah
- * tanpa mengubah `knightrasp.cpp`. Modul `rasp` sudah menyertakan ProGuard rule agar nama
- * ini tidak di-obfuscate.
+ * Class and `external` method names are part of the C++ (JNI) contract: the
+ * native side binds them with RegisterNatives in JNI_OnLoad. Do not rename them
+ * without updating `knightrasp.cpp`; the `rasp` module ships a ProGuard rule to
+ * keep this class intact.
  */
 class NativeProbeImpl private constructor() : NativeProbe {
 
-    override val libraryFileName: String = "lib${BuildConfig.NATIVE_LIB_NAME}.so"
+    override val libraryFileName: String = "lib${decodedLibraryName()}.so"
 
     override fun isDebuggerDetected(): Boolean = nativeAntiDebug()
 
@@ -39,14 +42,20 @@ class NativeProbeImpl private constructor() : NativeProbe {
     private external fun nativeKillProcess()
 
     companion object {
+        private fun decodedLibraryName(): String =
+            ObfuscatedStrings.decode(
+                BuildConfig.NATIVE_LIB_NAME_OBF,
+                BuildConfig.NATIVE_LIB_NAME_KEY,
+            )
+
         private val available: Boolean = try {
-            System.loadLibrary(BuildConfig.NATIVE_LIB_NAME)
+            System.loadLibrary(decodedLibraryName())
             true
         } catch (_: Throwable) {
             false
         }
 
-        /** Probe native, atau null bila library tidak tersedia pada build/ABI ini. */
+        /** Native probe, or null when the library is unavailable on this build/ABI. */
         @JvmStatic
         fun createOrNull(): NativeProbe? = if (available) NativeProbeImpl() else null
     }

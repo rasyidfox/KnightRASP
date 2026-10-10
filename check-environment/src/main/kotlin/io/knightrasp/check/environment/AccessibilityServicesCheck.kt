@@ -9,13 +9,13 @@ import io.knightrasp.model.Evidence
 import io.knightrasp.probe.SystemProbe
 
 /**
- * Layanan accessibility yang aktif di luar allowlist.
+ * Accessibility services enabled outside the allowlist.
  *
- * Layanan pihak ketiga bisa membaca/menekan UI pengguna (mis. menyetujui dialog secara
- * otomatis), tetapi banyak pengguna sah memakai TalkBack dan pembaca layar lain.
- * Karena itu check ini:
- * - melaporkan Unknown bila `allowedAccessibilityServices` kosong (belum dikonfigurasi),
- * - memakai confidence rendah dan diharapkan digabung sinyal lain.
+ * Third-party services can read/tap the user's UI (e.g. auto-approve dialogs),
+ * but many legitimate users rely on TalkBack and other screen readers.
+ * This check therefore:
+ * - reports Unknown when `allowedAccessibilityServices` is empty (not configured),
+ * - uses low confidence and is meant to be combined with other signals.
  */
 class AccessibilityServicesCheck(private val system: SystemProbe) : RaspCheck {
 
@@ -26,7 +26,7 @@ class AccessibilityServicesCheck(private val system: SystemProbe) : RaspCheck {
     override fun run(ctx: RaspContext): CheckResult {
         val allowed = ctx.config.allowedAccessibilityServices.filter { it.isNotBlank() }.toSet()
         if (allowed.isEmpty()) {
-            return CheckResult.Unknown("allowedAccessibilityServices belum dikonfigurasi")
+            return CheckResult.Unknown("allowedAccessibilityServices not configured")
         }
         val enabled = system.enabledAccessibilityServiceIds()
         if (enabled.isEmpty()) {

@@ -7,11 +7,12 @@ import io.knightrasp.check.RaspContext
 import io.knightrasp.model.Category
 import io.knightrasp.model.Evidence
 import io.knightrasp.probe.ProcProbe
+import io.knightrasp.util.ObfuscatedStrings
 
 /**
- * Nama proses mengandung penanda lingkungan virtual/parallel (mis. `parallel`,
- * `vbox`, `virtual`, `sandbox`) dan berbeda dari nama proses normal aplikasi.
- * Confidence rendah karena penamaan proses internal berbeda-beda antar produk.
+ * Process name contains virtual/parallel environment markers (e.g. `parallel`,
+ * `vbox`, `virtual`, `sandbox`) and differs from the app's normal process name.
+ * Low confidence because internal process naming varies between products.
  */
 class SuspiciousProcessNameCheck(private val proc: ProcProbe) : RaspCheck {
 
@@ -21,15 +22,15 @@ class SuspiciousProcessNameCheck(private val proc: ProcProbe) : RaspCheck {
 
     override fun run(ctx: RaspContext): CheckResult {
         val raw = proc.selfCmdline()
-            ?: return CheckResult.Unknown("tidak bisa membaca /proc/self/cmdline")
+            ?: return CheckResult.Unknown("process name unreadable")
         val processName = raw.trim()
         if (processName.isEmpty()) {
-            return CheckResult.Unknown("nama proses kosong")
+            return CheckResult.Unknown("empty process name")
         }
         val lowered = processName.lowercase()
         val matched = MARKERS.firstOrNull { it in lowered }
         return if (matched != null && processName != ctx.packageName) {
-            CheckResult.Detected(listOf(Evidence(id, CONFIDENCE, "proses:$processName")))
+            CheckResult.Detected(listOf(Evidence(id, CONFIDENCE, "process:$processName")))
         } else {
             CheckResult.Clean
         }
@@ -38,6 +39,10 @@ class SuspiciousProcessNameCheck(private val proc: ProcProbe) : RaspCheck {
     companion object {
         const val CONFIDENCE = 0.3f
 
-        val MARKERS = listOf("parallel", "vbox", "virtual", "cloner", "sandbox")
+        /** Obfuscated virtual/parallel environment process markers. */
+        val MARKERS: List<String> = ObfuscatedStrings.decodeList(
+            "5f4e5d4e43434a4325594d40572559465d5b5a4e43254c4340414a5d255c4e414b4d4057",
+            0x2F,
+        )
     }
 }

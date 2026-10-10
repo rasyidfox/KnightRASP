@@ -4,14 +4,14 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-/** Abstraksi penjadwalan agar [QueuedTelemetrySink] deterministik di unit test. */
+/** Scheduling abstraction so [QueuedTelemetrySink] is deterministic in unit tests. */
 interface TelemetryScheduler {
     fun execute(task: () -> Unit)
 
     fun schedule(delayMs: Long, task: () -> Unit)
 }
 
-/** Implementasi produksi: satu thread daemon. */
+/** Production implementation: a single daemon thread. */
 class ExecutorTelemetryScheduler(
     private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { runnable ->
         Thread(runnable, "knightrasp-telemetry").apply { isDaemon = true }

@@ -4,12 +4,12 @@ import android.os.Build
 import android.view.MotionEvent
 
 /**
- * Utilitas untuk memeriksa tapjacking pada touch event.
+ * Utility for checking tapjacking on touch events.
  *
- * RASP tidak bisa "mendeteksi overlay" dari luar; yang benar adalah memeriksa flag
- * pada setiap touch event yang masuk ke aplikasi. Panggil [isObscured] di
- * `onTouchEvent`/`dispatchTouchEvent` dan tolak aksi sensitif bila true, atau pasang
- * `android:filterTouchesWhenObscured="true"` pada view penting.
+ * RASP cannot "detect overlays" from the outside; the right approach is to check the flag
+ * on every touch event entering the app. Call [isObscured] in
+ * `onTouchEvent`/`dispatchTouchEvent` and reject sensitive actions when true, or set
+ * `android:filterTouchesWhenObscured="true"` on important views.
  */
 object TouchSafety {
 

@@ -3,15 +3,15 @@ package io.knightrasp.core
 import android.util.Log
 
 /**
- * Logger internal — varian **debug**.
+ * Internal logger — **debug** variant.
  *
- * Aktif hanya bila `RaspConfig.debugLogging = true`. Semua call site dibungkus
- * `if (RaspLog.ENABLED)` supaya R8 dapat menghapus seluruh logging (termasuk string
- * pesan) pada varian release.
+ * Active only when `RaspConfig.debugLogging = true`. All call sites are wrapped in
+ * `if (RaspLog.ENABLED)` so R8 can remove all logging (including the message
+ * strings) in release builds.
  */
 object RaspLog {
 
-    /** Konstanta compile-time; `true` pada varian debug. */
+    /** Compile-time constant; `true` in the debug variant. */
     const val ENABLED: Boolean = true
 
     private const val TAG = "KnightRASP"
