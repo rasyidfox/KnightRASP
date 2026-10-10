@@ -116,9 +116,24 @@ class TestNativeProbe : NativeProbe {
 
     override fun signalF(): Boolean = injectedMemory
 
+    override fun watchdog(enabled: Boolean, killOnEvidence: Boolean, intervalMs: Int) {
+        watchdogEnabled = enabled
+        watchdogKillOnEvidence = killOnEvidence
+        watchdogIntervalMs = intervalMs
+    }
+
+    override fun signalRisk(detected: Boolean) {
+        riskReported = detected
+    }
+
     override fun shutdown() {
         killCalled = true
     }
+
+    var watchdogEnabled: Boolean? = null
+    var watchdogKillOnEvidence = false
+    var watchdogIntervalMs = 0
+    var riskReported = false
 }
 
 class TestProbes(

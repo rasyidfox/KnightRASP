@@ -10,8 +10,10 @@ import io.knightrasp.RaspListener
 import io.knightrasp.RaspRuntime
 import io.knightrasp.check.RaspCheck
 import io.knightrasp.check.RaspContext
+import io.knightrasp.config.Mode
 import io.knightrasp.config.MultiProcessMode
 import io.knightrasp.config.RaspConfig
+import io.knightrasp.model.Level
 import io.knightrasp.model.RaspError
 import io.knightrasp.model.ThreatAssessment
 import io.knightrasp.model.Trigger
@@ -107,6 +109,11 @@ class RaspRuntimeImpl(
                 probes.native?.shutdown() ?: Process.killProcess(Process.myPid())
             },
         )
+        probes.native?.watchdog(
+            enabled = config.watchdogEnabled,
+            killOnEvidence = config.mode == Mode.PROTECT,
+            intervalMs = config.watchdogIntervalMs.coerceIn(500L, Int.MAX_VALUE.toLong()).toInt(),
+        )
         registerForegroundCallbacks(app)
         active = true
         initialized = true
@@ -197,6 +204,13 @@ class RaspRuntimeImpl(
         } catch (t: Throwable) {
             reportError(RaspError(RaspError.Code.ENGINE_FAILURE, "Scan failed.", t))
             return
+        }
+
+        // Safety kill: in PROTECT mode a HIGH+ verdict is also reported to the native
+        // layer, which terminates the process from its watchdog even if the Kotlin
+        // response path (policy/executor) was tampered with.
+        if (config.mode == Mode.PROTECT && assessment.level >= Level.HIGH) {
+            probes.native?.signalRisk(true)
         }
 
         val responses = try {

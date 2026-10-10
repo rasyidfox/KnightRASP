@@ -27,6 +27,10 @@ import io.knightrasp.telemetry.TelemetrySink
  *   Unknown to avoid accusing too early.
  * @param debugLogging enables internal SDK logging. Default `false` (silent) — in
  *   release builds the logging code is absent entirely.
+ * @param watchdogEnabled enables the native watchdog thread that keeps re-evaluating
+ *   native checks independently of the Kotlin engine. Default `true`; if `init` is
+ *   never reached the watchdog arms itself in fail-secure mode.
+ * @param watchdogIntervalMs watchdog tick interval in milliseconds. Default 5 s.
  */
 data class RaspConfig @JvmOverloads constructor(
     val mode: Mode = Mode.MONITOR,
@@ -43,6 +47,8 @@ data class RaspConfig @JvmOverloads constructor(
     val rules: RaspRules? = null,
     val allowedAccessibilityServices: Set<String> = emptySet(),
     val debugLogging: Boolean = false,
+    val watchdogEnabled: Boolean = true,
+    val watchdogIntervalMs: Long = 5_000L,
 )
 
 enum class Mode { MONITOR, PROTECT }

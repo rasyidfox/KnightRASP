@@ -1,19 +1,22 @@
 package io.knightrasp.util
 
 /**
- * Minimal runtime string obfuscation used for detection-sensitive constants
- * (paths, markers, package names). Values are stored as hex-encoded XOR blobs
- * in the dex so plaintext markers do not appear in a static string dump.
+ * Minimal runtime string codec used for detection-sensitive constants (paths,
+ * markers, package names). Values are stored as hex-encoded XOR blobs in the dex
+ * so plaintext markers do not appear in a static string dump.
+ *
+ * The functions are `inline`: every Kotlin call site carries its own copy of the
+ * decoding loop, so there is no single method to hook in order to harvest the
+ * plaintext of all constants at runtime.
  *
  * This is obfuscation, not cryptography: it raises the cost of static analysis,
  * it does not hide anything from a determined attacker (see README hardening
- * notes). Internal use only.
+ * notes). Java callers can still use `TextCodec.INSTANCE.decode(...)`.
  */
 object TextCodec {
 
     /** Decodes a hex string back to text using a single-byte XOR key. */
-    @JvmStatic
-    fun decode(hex: String, key: Int): String {
+    inline fun decode(hex: String, key: Int): String {
         require(hex.length % 2 == 0) { "Invalid encoded string" }
         val mask = key and 0xFF
         val out = CharArray(hex.length / 2)
@@ -27,8 +30,5 @@ object TextCodec {
     }
 
     /** Decodes a newline-joined list of obfuscated values. */
-    @JvmStatic
-    @JvmOverloads
-    fun decodeList(hex: String, key: Int, separator: Char = '\n'): List<String> =
-        decode(hex, key).split(separator)
+    inline fun decodeList(hex: String, key: Int): List<String> = decode(hex, key).split('\n')
 }

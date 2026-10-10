@@ -108,6 +108,21 @@ interface NativeProbe {
     /** true = memory-map shapes typical of injected agents (memfd / writable+exec mappings). */
     fun signalF(): Boolean
 
+    /**
+     * Enables and configures the native watchdog: a native thread that keeps
+     * re-evaluating the native checks independently of the Kotlin engine and can
+     * terminate the process on its own. If this is never called (init hooked or
+     * skipped), the watchdog arms itself in fail-secure mode.
+     */
+    fun watchdog(enabled: Boolean, killOnEvidence: Boolean, intervalMs: Int)
+
+    /**
+     * Reports a high-risk verdict from the evaluator to the native layer; when
+     * the watchdog is in kill mode this terminates the process even if the
+     * Kotlin response path was tampered with.
+     */
+    fun signalRisk(detected: Boolean)
+
     /** Kills the process via a raw syscall, bypassing Java/libc wrappers. */
     fun shutdown()
 }

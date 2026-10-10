@@ -35,6 +35,14 @@ class JniBridge private constructor() : NativeProbe {
 
     override fun signalF(): Boolean = n7()
 
+    override fun watchdog(enabled: Boolean, killOnEvidence: Boolean, intervalMs: Int) {
+        n8(enabled, killOnEvidence, intervalMs)
+    }
+
+    override fun signalRisk(detected: Boolean) {
+        n9(detected)
+    }
+
     override fun shutdown() {
         n4()
     }
@@ -52,6 +60,10 @@ class JniBridge private constructor() : NativeProbe {
     private external fun n6(): Boolean
 
     private external fun n7(): Boolean
+
+    private external fun n8(enabled: Boolean, killOnEvidence: Boolean, intervalMs: Int)
+
+    private external fun n9(detected: Boolean)
 
     companion object {
         private fun decodedLibraryName(): String =

@@ -15,15 +15,18 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <link.h>
+#include <pthread.h>
 #include <sys/syscall.h>
 #include <sys/system_properties.h>
 #include <unistd.h>
 
 #include <array>
+#include <atomic>
 #include <cerrno>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <string>
 
 #if defined(__aarch64__)
@@ -358,6 +361,67 @@ bool scan_verdict() {
 }
 
 // ---------------------------------------------------------------------------
+// Native watchdog
+//
+// Runs on its own thread, independent of any Java/Kotlin call path: even if the
+// whole Kotlin engine (init, policy, response executor, probe interface) is
+// hooked to no-op, this thread keeps re-evaluating the native checks and can
+// terminate the process on its own. It also re-checks the executable segment
+// every tick, so inline hooks applied after load are detected.
+//
+// Arming:
+// - normal path: Kotlin calls n8() at init with the host configuration;
+// - fail-secure path: if n8() never arrives within the grace window (init was
+//   hooked or skipped), the watchdog arms itself with killing enabled.
+// ---------------------------------------------------------------------------
+
+std::atomic<int> g_kill_mode{-1};  // -1 unconfigured, 0 off, 1 on
+std::atomic<int> g_interval_ms{5000};
+std::atomic<bool> g_armed{false};
+
+bool watchdog_violation() {
+    return scan_status() || scan_trace() || scan_regions() || scan_root_mounts() ||
+           boot_state_modified() || suspicious_memory() || scan_verdict();
+}
+
+void* watchdog_main(void* /*arg*/) {
+    // Wait up to 5 s for the Kotlin side to configure us.
+    for (int i = 0; i < 50 && !g_armed.load(); ++i) {
+        const timespec pause{0, 100 * 1000 * 1000};
+        nanosleep(&pause, nullptr);
+    }
+    if (!g_armed.load()) {
+        // Never configured: arming was bypassed, fail secure.
+        g_kill_mode.store(1);
+        g_armed.store(true);
+    }
+
+    for (;;) {
+        // Sleep first: an immediate kill right after process start makes the
+        // platform relaunch the foreground task (kill-loop). Waiting one tick
+        // lets the activity settle, so the termination sticks.
+        const long interval = g_interval_ms.load();
+        const timespec pause{interval / 1000, (interval % 1000) * 1000 * 1000};
+        nanosleep(&pause, nullptr);
+        if (g_kill_mode.load() > 0 && watchdog_violation()) {
+            finish_now();
+        }
+    }
+    return nullptr;
+}
+
+void ensure_watchdog() {
+    static const bool started = [] {
+        pthread_t thread;
+        if (pthread_create(&thread, nullptr, &watchdog_main, nullptr) == 0) {
+            pthread_detach(thread);
+        }
+        return true;
+    }();
+    (void)started;
+}
+
+// ---------------------------------------------------------------------------
 // JNI bindings (registered, not exported by name)
 // ---------------------------------------------------------------------------
 
@@ -389,6 +453,24 @@ jboolean call_g(JNIEnv* /*env*/, jobject /*thiz*/) {
     return suspicious_memory() ? JNI_TRUE : JNI_FALSE;
 }
 
+void call_h(JNIEnv* /*env*/, jobject /*thiz*/, jboolean enabled, jboolean kill, jint interval_ms) {
+    g_armed.store(true);
+    if (!enabled) {
+        g_kill_mode.store(0);
+        return;
+    }
+    g_kill_mode.store(kill ? 1 : 0);
+    if (interval_ms >= 500) {
+        g_interval_ms.store(interval_ms);
+    }
+}
+
+void call_i(JNIEnv* /*env*/, jobject /*thiz*/, jboolean risk) {
+    if (risk && g_kill_mode.load() > 0) {
+        finish_now();
+    }
+}
+
 const JNINativeMethod kMethods[] = {
     {const_cast<char*>("n1"), const_cast<char*>("()Z"),
      reinterpret_cast<void*>(&call_a)},
@@ -404,6 +486,10 @@ const JNINativeMethod kMethods[] = {
      reinterpret_cast<void*>(&call_f)},
     {const_cast<char*>("n7"), const_cast<char*>("()Z"),
      reinterpret_cast<void*>(&call_g)},
+    {const_cast<char*>("n8"), const_cast<char*>("(ZZI)V"),
+     reinterpret_cast<void*>(&call_h)},
+    {const_cast<char*>("n9"), const_cast<char*>("(Z)V"),
+     reinterpret_cast<void*>(&call_i)},
 };
 
 }  // namespace
@@ -421,5 +507,6 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
     if (env->RegisterNatives(clazz, kMethods, count) != JNI_OK) {
         return JNI_ERR;
     }
+    ensure_watchdog();
     return JNI_VERSION_1_6;
 }

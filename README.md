@@ -440,6 +440,9 @@ What is already in place:
 | Kotlin/Java | Detection-sensitive constants (root paths, Magisk packages, hook markers, `/proc` paths, settings keys, cloner packages) are stored as **XOR+hex blobs** and decoded at runtime (`TextCodec`); no plaintext markers remain in the dex. |
 | Kotlin/Java | The native library name is decoded at runtime from an obfuscated `BuildConfig` value. |
 | Kotlin/Java | Consumer ProGuard rules keep **only the public contract** (`check.*`/`probe.*` use a single `*`, so internal implementations in subpackages are renamed by the host app's R8 in release builds). |
+| Kotlin/Java | `TextCodec` decode functions are **`inline`**: the decoding loop is copied into every call site, so there is no single method to hook to harvest all constants at runtime. |
+| Kotlin/Java | **Safety kill**: in PROTECT mode a HIGH+ verdict is also reported to the native layer, which terminates the process from its watchdog even if the policy/response path is hooked. |
+| Native | **Watchdog thread**: independently re-evaluates the native checks every 5 s and terminates the process on its own — hooking `Rasp.init`, the policy, the executor, or the probe interface cannot stop it. If `init` never configures it (hooked/skipped), it arms itself in fail-secure mode. Any inline hook applied after load is caught by the periodic executable-segment re-check. |
 | Native | Sensitive C++ strings (paths, markers, JNI class name) are **compile-time XOR-encrypted** and never appear in `.rodata`. |
 | Native | JNI methods are bound with **`RegisterNatives`** in `JNI_OnLoad` — no `Java_*` symbols are exported (only `JNI_OnLoad`), so symbol-based fingerprinting and hook targeting get harder. |
 | Native | The library identifies its own module via **`dladdr()`**, so no file-name string is needed internally. |

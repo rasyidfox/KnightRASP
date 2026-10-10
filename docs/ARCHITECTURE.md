@@ -540,6 +540,20 @@ false-positive characteristics:
 10. **Not implemented (future):** a packer/encrypted-dex loader and OLLVM
     control-flow flattening. These raise the bar further but are not a substitute for
     server-side decisions.
+11. **Native watchdog.** A native thread reloads/re-evaluates the native checks on a
+    timer, entirely outside the Java/Kotlin call path, and can terminate the process
+    by itself. This neutralizes the cheapest bypass class (hooking `Rasp.init`,
+    `Policy`, `ResponseExecutor`, or the probe interface to no-op) and re-checks the
+    executable segment every tick, so post-load inline hooks are detected. Arming is
+    fail-secure: if `init` never delivers the configuration, the watchdog arms with
+    killing enabled. The first tick waits one interval so an early kill does not make
+    the platform relaunch the foreground task.
+12. **Safety-kill latch (`signalRisk`).** In PROTECT mode, a HIGH+ verdict is
+    reported to native before the response path runs; the native side performs the
+    termination itself, so a hooked policy/executor cannot suppress it.
+13. **`inline` codec.** `TextCodec.decode`/`decodeList` are inlined into every call
+    site, removing the single choke point that a runtime hook could use to dump all
+    obfuscated constants.
 
 ---
 
