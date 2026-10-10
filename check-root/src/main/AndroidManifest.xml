@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Visibilitas paket (Android 11+): paket root manager yang dicek.
+         Hindari QUERY_ALL_PACKAGES yang dilarang kebijakan Play untuk kasus umum. -->
+    <queries>
+        <package android:name="com.topjohnwu.magisk" />
+        <package android:name="me.weishu.kernelsu" />
+        <package android:name="org.lsposed.manager" />
+        <package android:name="eu.chainfire.supersu" />
+    </queries>
+
+</manifest>

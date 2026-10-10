@@ -1,0 +1,25 @@
+*.iml
+.gradle/
+build/
+local.properties
+.idea/
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+.kotlin/
+output-metadata.json
+
+# artifacts
+*.apk
+*.aab
+!dist/
+!dist/*.apk
+*.jks
+*.keystore
+keystore.properties
+
+# editor & log
+.fleet/
+.vscode/
+*.log

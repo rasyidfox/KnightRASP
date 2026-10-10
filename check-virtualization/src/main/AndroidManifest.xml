@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Visibilitas paket (Android 11+): host app cloner yang dicek. -->
+    <queries>
+        <package android:name="com.lbe.parallel" />
+        <package android:name="com.lbe.parallel.intl" />
+        <package android:name="com.excelliance.multiaccounts" />
+        <package android:name="com.excelliance.dualaid" />
+        <package android:name="com.polestar.domultiple" />
+        <package android:name="com.polestar.superclone" />
+        <package android:name="com.parallel.space.lite" />
+    </queries>
+
+</manifest>

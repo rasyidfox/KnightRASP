@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+
+        <!--
+            Menyambungkan runtime default (probes + seluruh check) ke facade Rasp
+            sebelum Application.onCreate berjalan, sehingga aplikasi cukup memanggil
+            Rasp.init(this, config).
+        -->
+        <provider
+            android:name="io.knightrasp.internal.KnightRASPInitProvider"
+            android:authorities="${applicationId}.knightrasp-init"
+            android:exported="false"
+            android:initOrder="100" />
+
+    </application>
+
+</manifest>
