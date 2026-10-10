@@ -14,7 +14,7 @@ logs and no dialogs**.
 - Telemetry queue, signed remote rules, Play Integrity — all optional
 - Latest review: 114 unit tests passing, tested on a real device (Android 13)
 
-**Docs:** [Architecture & design](docs/ARCHITECTURE.md) · [Check catalog](docs/CHECKS.md)
+**Docs:** [Architecture & design](docs/ARCHITECTURE.md) · [Check catalog](docs/CHECKS.md) · [Integration guide](docs/INTEGRATION.md)
 
 ---
 
@@ -51,21 +51,22 @@ The APK is signed with a debug key and meant for evaluation only.
 
 1. [Requirements](#requirements)
 2. [Installation](#installation)
-3. [Quick start](#quick-start)
-4. [Configuration](#configuration)
-5. [Policy, responses, and silent mode](#policy-responses-and-silent-mode)
-6. [Telemetry (optional)](#telemetry-optional)
-7. [Signed remote rules (optional)](#signed-remote-rules-optional)
-8. [Play Integrity (optional)](#play-integrity-optional)
-9. [Utilities](#utilities)
-10. [Advanced customization](#advanced-customization)
-11. [Check catalog](#check-catalog)
-12. [Module layout](#module-layout)
-13. [Build & test from source](#build--test-from-source)
-14. [Status & roadmap](#status--roadmap)
-15. [Security & limitations](#security--limitations)
-16. [Privacy](#privacy)
-17. [License](#license)
+3. [Integration guide (existing apps)](docs/INTEGRATION.md)
+4. [Quick start](#quick-start)
+5. [Configuration](#configuration)
+6. [Policy, responses, and silent mode](#policy-responses-and-silent-mode)
+7. [Telemetry (optional)](#telemetry-optional)
+8. [Signed remote rules (optional)](#signed-remote-rules-optional)
+9. [Play Integrity (optional)](#play-integrity-optional)
+10. [Utilities](#utilities)
+11. [Advanced customization](#advanced-customization)
+12. [Check catalog](#check-catalog)
+13. [Module layout](#module-layout)
+14. [Build & test from source](#build--test-from-source)
+15. [Status & roadmap](#status--roadmap)
+16. [Security & limitations](#security--limitations)
+17. [Privacy](#privacy)
+18. [License](#license)
 
 ---
 
@@ -87,6 +88,10 @@ in `gradle.properties` (transitive AndroidX dependency).
 ## Installation
 
 The SDK is published as one AAR per module, group `io.knightrasp`, version `0.1.0`.
+
+> **First time integrating?** Follow the [Integration guide](docs/INTEGRATION.md) —
+> a step-by-step walkthrough for Kotlin and Java hosts (Gradle Kotlin DSL and Groovy),
+> mode/policy rollout, Java interop details, and device verification commands.
 
 ### Option A — Local Maven (most practical today)
 
@@ -189,7 +194,8 @@ class App : Application() {
 ```
 
 The SDK attaches its own runtime through a ContentProvider (the `rasp` module), so
-`Rasp.init(...)` is all you need — no other registration step.
+`Rasp.init(...)` is all you need — no other registration step. For Java hosts, Groovy
+DSL, and the MONITOR→PROTECT rollout, see the [Integration guide](docs/INTEGRATION.md).
 
 ---
 
