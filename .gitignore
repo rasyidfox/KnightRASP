@@ -27,3 +27,6 @@ keystore.properties
 # python tooling
 __pycache__/
 *.pyc
+
+# Windows metadata
+*:Zone.Identifier

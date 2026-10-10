@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="knight-rasp.png" alt="KnightRASP logo" width="220" />
+</p>
+
 # KnightRASP
 
 RASP (**R**untime **A**pplication **S**elf-**P**rotection) for Android — an embeddable
